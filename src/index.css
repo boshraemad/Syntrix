@@ -5,7 +5,7 @@
 
 /* color palette */
 @theme {
-  --color-*: initial;
+  /* --color-*: initial; */
   --color-primary: #03050E;
   --color-second: #171B4D;
   --color-font: #FFFFFF;
