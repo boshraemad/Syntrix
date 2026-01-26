@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 export default function Login() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-primary">
+    <div className="min-h-screen w-full flex items-center justify-center bg-primary font-popns ">
       <div className="w-[90%] flex items-center flex-col">
           <h1 className='font-bold text-font text-6xl mb-10'>Syntrix</h1>
           <form className='text-font flex flex-col gap-2 justify-between'>
