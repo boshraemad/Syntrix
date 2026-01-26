@@ -1,6 +1,7 @@
 import Analytics from "@/pages/Analytics";
 import Discover from "@/pages/Discover";
 import HomePage from "@/pages/HomePage";
+import Layout from "@/pages/Layout";
 import Login from "@/pages/Login";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
@@ -11,16 +12,13 @@ const router = createBrowserRouter([
     },
     {
         path:"/",
-        element:<HomePage/>
+        element:<Layout/>,
+        children:[
+            {index:true , element:<HomePage/>},
+            {path:"discover" , element:<Discover/>},
+            {path:"analytics" ,  element:<Analytics/> }
+        ]
     },
-    {
-        path:"discover",
-        element:<Discover/>
-    },
-    {
-        path:"analytics",
-        element:<Analytics/>
-    }
 ]);
 
 export default function AppRouter() {
