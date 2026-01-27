@@ -31,7 +31,7 @@ export default function SideBar() {
           <nav className="flex-1">
             {menuItems.map((item, index) => (
               <Link 
-               to={`/${item.title}`}
+                to={`/${item.title === "Home" ? "/" : item.title}`}
                 key={index} 
                 className={`flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer transition-all ${item.active ? 'bg-white/5 border border-third/50' : 'hover:bg-white/5'}`}
               >
