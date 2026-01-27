@@ -15,8 +15,8 @@ const router = createBrowserRouter([
         element:<Layout/>,
         children:[
             {index:true , element:<HomePage/>},
-            {path:"discover" , element:<Discover/>},
-            {path:"analytics" ,  element:<Analytics/> }
+            {path:"Discover" , element:<Discover/>},
+            {path:"Analytics" ,  element:<Analytics/> }
         ]
     },
 ]);
