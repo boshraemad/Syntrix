@@ -4,6 +4,7 @@ import HomePage from "@/pages/HomePage";
 import Layout from "@/pages/Layout";
 import Login from "@/pages/Login";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import RootErrorBoundary from "./RootErrorBoundary";
 
 const router = createBrowserRouter([
     {
@@ -12,6 +13,7 @@ const router = createBrowserRouter([
     },
     {
         path:"/",
+        errorElement:<RootErrorBoundary/>,
         element:<Layout/>,
         children:[
             {index:true , element:<HomePage/>},

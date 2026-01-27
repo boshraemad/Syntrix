@@ -9,7 +9,7 @@ export default function HomePage() {
   ];
 
   return (
-      <div className='min-h-screen px-12.5 text-font p-8 bg-primary'>
+      <div className='min-h-screen px-12.5 text-font p-8 bg-canvas'>
         <h1 className="text-3xl font-bold mb-12">Welcome home</h1>
 
         {/* Three Cards */}
