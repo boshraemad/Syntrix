@@ -1,63 +1,171 @@
-import React from 'react'
-import { useState } from 'react'
-import { FaBars, FaHome, FaChevronRight } from "react-icons/fa";
-import { IoCloseOutline } from "react-icons/io5"; // أيقونة القفل
+import React, { useState, useEffect, useRef } from 'react';
+import { FaBars, FaHome, FaChevronRight, FaChevronDown } from "react-icons/fa";
+import { IoCloseOutline } from "react-icons/io5";
 import { MdOutlineAnalytics, MdOutlineSecurity, MdSettings } from "react-icons/md";
-import { TbTelescope } from "react-icons/tb"; // أيقونة Observability
-import { Link } from 'react-router-dom';
+import { TbTelescope } from "react-icons/tb";
+import { Link, useLocation } from 'react-router-dom';
+
 export default function SideBar() {
-    const [isOpen, setIsOpen] = useState(false); 
-      // بيانات القائمة الجانبية
+  const [isOpen, setIsOpen] = useState(false);
+  const [openSubMenu, setOpenSubMenu] = useState(null);
+  const location = useLocation();
+  const sidebarRef = useRef(null); // مرجع للـ Sidebar
+
+  // 1. إغلاق القائمة عند تغيير المسار
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  // 2. إغلاق القائمة عند الضغط في أي مكان خارج الـ Sidebar
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
   const menuItems = [
-    { title: "Home", icon: <FaHome />, active: true },
-    { title: "Analytics", icon: <MdOutlineAnalytics /> },
-    { title: "Observability", icon: <TbTelescope /> },
-    { title: "Security", icon: <MdOutlineSecurity /> },
-    { title: "Setting", icon: <MdSettings /> },
+    { title: "Home", path: "/", icon: <FaHome /> },
+    { 
+      title: "Analytics", 
+      icon: <MdOutlineAnalytics />,
+      subLinks: [
+        { name: "Discover", path: "/discover" },
+        { name: "Dashboards", path: "/dashboards" },
+        { name: "Canvas", path: "/canvas" },
+        { name: "Maps", path: "/maps" },
+        { name: "Machine Learning", path: "/machine-learning" },
+        { name: "Visualize Library", path: "/visualize-library" }
+      ]
+    },
+    { 
+      title: "Observability", 
+      icon: <TbTelescope />, 
+      subLinks: [
+        { name: "Logs", path: "/logs" },
+        { name: "Metrics", path: "/metrics" }
+      ] 
+    },
+    { 
+      title: "Security", 
+      icon: <MdOutlineSecurity />, 
+      subLinks: [
+        { name: "Overview", path: "/overview" },
+        { name: "Detections", path: "/detections" }
+      ] 
+    },
+    { title: "Setting", path: "/setting", icon: <MdSettings /> },
   ];
 
+  const isParentActive = (item) => {
+    if (item.path === location.pathname) return true;
+    if (item.subLinks) {
+      return item.subLinks.some(sub => sub.path === location.pathname);
+    }
+    return false;
+  };
+
+  const toggleSubMenu = (title) => {
+    setOpenSubMenu(openSubMenu === title ? null : title);
+  };
+
   return (
-        <div className="min-h-screen bg-primary text-white p-8 relative overflow-x-hidden">
-      {/* --- Sidebar (Toggle Menu) --- */}
-      <div className={`fixed top-0 left-0 h-full bg-primary border-r border-white/10 z-50 transition-all duration-300 ${isOpen ? 'w-64' : 'w-0'} overflow-hidden`}>
-        <div className="p-4 flex flex-col h-full">
-          {/* رأس القائمة */}
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-bold px-2">Syntrix</h2>
-            <IoCloseOutline className="text-2xl cursor-pointer hover:text-third " onClick={() => setIsOpen(false)} />
+    <>
+      {/* زر الفتح - بيظهر في الـ Layout الأساسي */}
+      {!isOpen && (
+        <div className="p-4 fixed top-15 left-0 z-30">
+          <FaBars 
+            className="text-2xl cursor-pointer text-white hover:text-third transition-colors" 
+            onClick={() => setIsOpen(true)} 
+          />
+        </div>
+      )}
+
+      {/* --- Sidebar --- */}
+      <div 
+        ref={sidebarRef} // ربط المرجع هنا
+        className={`fixed top-0 left-0 h-full bg-[#020617] z-50 transition-all duration-300 ${isOpen ? 'w-72' : 'w-0'} overflow-hidden 
+        border-r border-third/40 
+        shadow-[5px_0_25px_-5px_rgba(var(--third-rgb),0.4)]`}
+      > 
+        
+        <div className="p-4 flex flex-col h-full w-72">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-third bg-clip-text text-transparent px-2">
+              Syntrix
+            </h2>
+            <IoCloseOutline 
+              className="text-3xl cursor-pointer text-white/50 hover:text-white transition-all" 
+              onClick={() => setIsOpen(false)} 
+            />
           </div>
 
-          {/* روابط القائمة */}
-          <nav className="flex-1">
-            {menuItems.map((item, index) => (
-              <Link 
-                to={`/${item.title === "Home" ? "/" : item.title}`}
-                key={index} 
-                className={`flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer transition-all ${item.active ? 'bg-white/5 border border-third/50' : 'hover:bg-white/5'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl text-white/70">{item.icon}</span>
-                  <span className="font-medium">{item.title}</span>
+          {/* Nav Links */}
+          <nav className="flex-1 overflow-y-auto custom-scrollbar">
+            {menuItems.map((item, index) => {
+              const active = isParentActive(item);
+              
+              return (
+                <div key={index} className="mb-2">
+                  <div 
+                    onClick={() => item.subLinks ? toggleSubMenu(item.title) : null}
+                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all 
+                      ${active ? 'bg-third/20 border border-third/50 shadow-[0_0_15px_rgba(var(--third-rgb),0.2)]' : 'hover:bg-white/5'}`}
+                  >
+                    <Link 
+                      to={item.subLinks ? "#" : item.path}
+                      className="flex items-center gap-3 flex-1"
+                    >
+                      <span className={`text-xl ${active ? 'text-third' : 'text-white/70'}`}>{item.icon}</span>
+                      <span className={`font-medium ${active ? 'text-white' : 'text-gray-400'}`}>{item.title}</span>
+                    </Link>
+                    
+                    {item.subLinks && (
+                      openSubMenu === item.title ? <FaChevronDown className="text-xs text-third" /> : <FaChevronRight className="text-xs text-white/40" />
+                    )}
+                  </div>
+
+                  {item.subLinks && openSubMenu === item.title && (
+                    <div className="ml-9 mt-2 flex flex-col gap-1 border-l border-third/20 pl-4 transition-all">
+                      {item.subLinks.map((sub, idx) => {
+                        const isSubActive = location.pathname === sub.path;
+                        return (
+                          <Link 
+                            key={idx} 
+                            to={sub.path}
+                            className={`text-sm py-2 px-2 rounded-md transition-colors 
+                              ${isSubActive ? 'text-third bg-third/5 font-bold' : 'text-gray-500 hover:text-third/80'}`}
+                          >
+                            {sub.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                <FaChevronRight className="text-xs text-white/40" />
-              </Link>
-            ))}
+              );
+            })}
           </nav>
 
-          {/* الزرار السفلي في القائمة */}
-          <button className="mt-auto cursor-pointer  bg-white text-primary w-full py-2 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-gray-200">
-            <span className="text-lg ">+</span> Add integration
+          {/* Bottom Action */}
+          <button className="mt-auto cursor-pointer bg-white text-[#020617] w-full py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-third hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+            <span className="text-xl">+</span> Add integration
           </button>
         </div>
       </div>
-
-      {/* --- Main Content --- */}
-      {/* أيقونة فتح القائمة */}
-      <FaBars className="text-2xl mb-3 cursor-pointer hover:text-third transition-colors" onClick={() => setIsOpen(true)} />
-              {/* خلفية معتمة عند فتح القائمة (Overlay) */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" onClick={() => setIsOpen(false)}></div>
-      )}
-    </div>
-  )
+    </>
+  );
 }
