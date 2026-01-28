@@ -1,8 +1,10 @@
 import { Save } from 'lucide-react'
 import React from 'react'
+import DiscoverBottom from '@/component/DiscoverNavbar2'
 
 export default function Discover() {
   return (
+    <div className='text-font'><DiscoverBottom/></div>
 <>
 <div className='flex items-center justify-between'>
       <span className='bg-[#1F2029] text-font px-2.5 py-1'>Discover</span>
