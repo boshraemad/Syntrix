@@ -9,7 +9,7 @@ export default function SideBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [openSubMenu, setOpenSubMenu] = useState(null);
   const location = useLocation();
-  const sidebarRef = useRef(null); // مرجع للـ Sidebar
+  const sidebarRef = useRef(null);
 
   // 1. إغلاق القائمة عند تغيير المسار
   useEffect(() => {
@@ -39,6 +39,7 @@ export default function SideBar() {
     { title: "Home", path: "/", icon: <FaHome /> },
     { 
       title: "Analytics", 
+      path: '/Analytics', // المسار الذي سيتم التوجه إليه عند الضغط
       icon: <MdOutlineAnalytics />,
       subLinks: [
         { name: "Discover", path: "/discover" },
@@ -51,6 +52,7 @@ export default function SideBar() {
     },
     { 
       title: "Observability", 
+      path: '/observability',
       icon: <TbTelescope />, 
       subLinks: [
         { name: "Logs", path: "/logs" },
@@ -59,6 +61,7 @@ export default function SideBar() {
     },
     { 
       title: "Security", 
+      path: '/security',
       icon: <MdOutlineSecurity />, 
       subLinks: [
         { name: "Overview", path: "/overview" },
@@ -82,7 +85,7 @@ export default function SideBar() {
 
   return (
     <>
-      {/* زر الفتح - بيظهر في الـ Layout الأساسي */}
+      {/* زر الفتح */}
       {!isOpen && (
         <div className="p-4 fixed top-15 left-0 z-30">
           <FaBars 
@@ -94,7 +97,7 @@ export default function SideBar() {
 
       {/* --- Sidebar --- */}
       <div 
-        ref={sidebarRef} // ربط المرجع هنا
+        ref={sidebarRef}
         className={`fixed top-0 left-0 h-full bg-[#020617] z-50 transition-all duration-300 ${isOpen ? 'w-72' : 'w-0'} overflow-hidden 
         border-r border-third/40 
         shadow-[5px_0_25px_-5px_rgba(var(--third-rgb),0.4)]`}
@@ -117,28 +120,44 @@ export default function SideBar() {
           <nav className="flex-1 overflow-y-auto custom-scrollbar">
             {menuItems.map((item, index) => {
               const active = isParentActive(item);
+              const hasSubMenu = !!item.subLinks;
               
               return (
                 <div key={index} className="mb-2">
                   <div 
-                    onClick={() => item.subLinks ? toggleSubMenu(item.title) : null}
                     className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all 
                       ${active ? 'bg-third/20 border border-third/50 shadow-[0_0_15px_rgba(var(--third-rgb),0.2)]' : 'hover:bg-white/5'}`}
                   >
+                    {/* اللينك الأساسي للقسم */}
                     <Link 
-                      to={item.subLinks ? "#" : item.path}
+                      to={item.path || "#"} 
+                      onClick={() => hasSubMenu && toggleSubMenu(item.title)}
                       className="flex items-center gap-3 flex-1"
                     >
                       <span className={`text-xl ${active ? 'text-third' : 'text-white/70'}`}>{item.icon}</span>
                       <span className={`font-medium ${active ? 'text-white' : 'text-gray-400'}`}>{item.title}</span>
                     </Link>
                     
-                    {item.subLinks && (
-                      openSubMenu === item.title ? <FaChevronDown className="text-xs text-third" /> : <FaChevronRight className="text-xs text-white/40" />
+                    {/* سهم لفتح القائمة الفرعية بشكل منفصل لمنع الانتقال للصفحة عند الضغط عليه فقط */}
+                    {hasSubMenu && (
+                      <div 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleSubMenu(item.title);
+                        }}
+                        className="p-1 hover:bg-white/10 rounded-md transition-all"
+                      >
+                        {openSubMenu === item.title ? 
+                          <FaChevronDown className="text-xs text-third" /> : 
+                          <FaChevronRight className="text-xs text-white/40" />
+                        }
+                      </div>
                     )}
                   </div>
 
-                  {item.subLinks && openSubMenu === item.title && (
+                  {/* القائمة الفرعية */}
+                  {hasSubMenu && openSubMenu === item.title && (
                     <div className="ml-9 mt-2 flex flex-col gap-1 border-l border-third/20 pl-4 transition-all">
                       {item.subLinks.map((sub, idx) => {
                         const isSubActive = location.pathname === sub.path;
