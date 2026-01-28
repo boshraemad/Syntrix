@@ -10,7 +10,7 @@ export default function Layout() {
     <div className='flex flex-1 overflow-hidden'>
       <SideBar />
 
-      <main className='flex-1 overflow-y-auto min-h-screen px-12.5 text-font p-8 bg-canvas'>
+      <main className='flex-1 overflow-y-auto min-h-screen text-font bg-canvas px-12 py-6.5'>
         <Outlet />
       </main>
     </div>
