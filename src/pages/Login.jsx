@@ -9,7 +9,7 @@ export default function Login() {
     register,
     formState: { errors },
     handleSubmit,
-  } = useForm()
+  } = useForm({ mode: "onChange"})
   // const {isLoading , loginUser}=useLogin();
   const onSubmit=(data)=>{
     if(!data) return;
