@@ -5,11 +5,6 @@ export async function login(data){
         return res.data;
 }
 
-export async function register(data){
-        const res = await axiosInstance.post("/Account/register" , data);
-        return res.data;
-}
-
 export async function VerifyEmail(data){
     const res = await axiosInstance.post("/Account/verifyEmail" , data);
     return res.data;

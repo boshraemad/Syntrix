@@ -2,8 +2,20 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-
+// import useLogin from '@/features/Auth/hooks/useLogin'
+import { useForm } from 'react-hook-form'
 export default function Login() {
+  const {
+    register,
+    formState: { errors },
+    handleSubmit,
+  } = useForm()
+  // const {isLoading , loginUser}=useLogin();
+  const onSubmit=(data)=>{
+    if(!data) return;
+    // loginUser(data);
+    console.log(data);
+  }
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden font-poppins">
       
@@ -39,30 +51,38 @@ export default function Login() {
             Syntrix
           </motion.h1>
 
-          <form className='w-full text-white flex flex-col gap-6'>
+          <form className='w-full text-white flex flex-col gap-6' onSubmit={handleSubmit(onSubmit)}>
             
             {/* Username Input */}
             <div className='flex flex-col gap-2'>
               <label className='text-sm font-medium text-gray-300 ml-1'>Username</label>
-              <input 
+              <input
+                {...register("userName", { required: true })}
                 type="text"
                 placeholder="........................"
                 className='px-4 py-3 bg-black/60 border-indigo-900/40 border rounded-xl outline-none focus:border-indigo-500 transition-all text-white placeholder-gray-500'
               />
+              {errors.username?.type === "required" && (
+                 <p className='text-red-500 text-sm p-2'>username is required</p>
+               )}
             </div>
 
             {/* Password Input */}
             <div className='flex flex-col gap-2 mb-2'>
               <label className='text-sm font-medium text-gray-300 ml-1'>password</label>
               <input 
+               {...register("password", { required: true })}
                 type="password" 
                 placeholder="*******"
                 className='px-4 py-3 bg-black/60 border-indigo-900/40 border rounded-xl outline-none focus:border-indigo-500 transition-all text-white placeholder-gray-500'
               />
+                 {errors.password?.type === "required" && (
+                 <p className='text-red-500 text-sm p-2'>password is required</p>
+               )}
             </div>
 
             {/* Login Button */}
-            <Button className="w-full bg-[#1e1b4b] hover:bg-indigo-900 text-white py-7 rounded-2xl font-bold text-xl transition-all shadow-xl shadow-indigo-500/10">
+            <Button type="submit" className="w-full bg-[#1e1b4b] hover:bg-indigo-900 text-white py-7 rounded-2xl font-bold text-xl transition-all shadow-xl shadow-indigo-500/10">
               Login
             </Button>
 
