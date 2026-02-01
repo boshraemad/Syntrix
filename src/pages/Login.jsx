@@ -2,7 +2,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-// import useLogin from '@/features/Auth/hooks/useLogin'
+import useLogin from '@/features/Auth/hooks/useLogin'
 import { useForm } from 'react-hook-form'
 export default function Login() {
   const {
@@ -10,10 +10,10 @@ export default function Login() {
     formState: { errors },
     handleSubmit,
   } = useForm({ mode: "onChange"})
-  // const {isLoading , loginUser}=useLogin();
+  const {isLoading , loginUser}=useLogin();
   const onSubmit=(data)=>{
     if(!data) return;
-    // loginUser(data);
+    loginUser(data);
     console.log(data);
   }
   return (
@@ -55,15 +55,15 @@ export default function Login() {
             
             {/* Username Input */}
             <div className='flex flex-col gap-2'>
-              <label className='text-sm font-medium text-gray-300 ml-1'>Username</label>
+              <label className='text-sm font-medium text-gray-300 ml-1'>Email</label>
               <input
-                {...register("userName", { required: true })}
+                {...register("email", { required: true })}
                 type="text"
                 placeholder="........................"
                 className='px-4 py-3 bg-black/60 border-indigo-900/40 border rounded-xl outline-none focus:border-indigo-500 transition-all text-white placeholder-gray-500'
               />
-              {errors.username?.type === "required" && (
-                 <p className='text-red-500 text-sm p-2'>username is required</p>
+              {errors.email?.type === "required" && (
+                 <p className='text-red-500 text-sm p-2'>email is required</p>
                )}
             </div>
 

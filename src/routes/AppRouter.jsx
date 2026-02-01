@@ -7,7 +7,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import RootErrorBoundary from "./RootErrorBoundary";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
-
+import VerifyEmailPage from "@/pages/VerifyEmailPage";
+import Authenticator from "@/pages/Authenticator";
 const router = createBrowserRouter([
     {
         path:"login",
@@ -16,7 +17,7 @@ const router = createBrowserRouter([
     {
         path:"/",
         errorElement:<RootErrorBoundary/>,
-        element:<Layout/>,
+        element:<Authenticator><Layout/></Authenticator>,
         children:[
             {index:true , element:<HomePage/>},
             {path:"Discover" , element:<Discover/>},
@@ -31,6 +32,11 @@ const router = createBrowserRouter([
     {
         path:"/reset-password",
         element:<ResetPasswordPage/>
+    }
+    ,
+    {
+        path:"/verify-email",
+        element:<VerifyEmailPage/>
     }
 ]);
 

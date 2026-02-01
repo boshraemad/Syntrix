@@ -13,7 +13,8 @@ const config = {
   maxBodyLength: 10 * 1024 * 1024, // Set to 10MB, adjust as needed
   baseURL: URL,
   headers: {
-    Accept: "application/json",
+    "Accept": "application/json",
+    "Content-Type": "application/json",
   },
 };
 

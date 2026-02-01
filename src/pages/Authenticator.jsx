@@ -5,7 +5,7 @@ import { Navigate, useLocation } from "react-router-dom";
 
 export default function Authenticator(children) {
     const location = useLocation();
-    const token = Cookies.get("token");
+    const token = localStorage.getItem("token")
     const currentPath = location.pathname;
     const isOnAuthPage = currentPath.startsWith("/login");
   

@@ -6,19 +6,17 @@ import { useAuth } from "@/context/AuthContext"
 
 export default function useLogin() {
     const navigate=useNavigate();
-    // const {setAccessToken , setRefreshToken} = useAuth();
-  const {isLoading:isLogging , mutate:loginUser} = useMutation({
+    const {setAccessToken} = useAuth();
+    const {isLoading:isLogging , mutate:loginUser} = useMutation({
     mutationFn:(data)=>login(data),
     onSuccess:(data)=>{
         showSuccessToast("user logged in successfully");
-        setAccessToken(data.data.accessToken)
-        setRefreshToken(data.data.refreshToken)
-        localStorage.setItem("accessToken" , data.data.accessToken);
-        localStorage.setItem("refreshToken" , data.data.refreshToken);
+        setAccessToken(data.data.token)
+        localStorage.setItem("token" , data.token);
         navigate("/");
     },
     onError:(error)=>{
-        showErrorToast( error?.response?.data.errors[0] || "Login failed. Please try again." );
+        showErrorToast( error?.message || "Login failed. Please try again." );
     }
   })
 

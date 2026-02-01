@@ -1,6 +1,8 @@
 import React from 'react';
-
+import { useAuth } from '@/context/AuthContext';
 export default function HomePage() {
+const {accessToken} = useAuth();
+console.log(accessToken);
 
   const features = [
     { title: "Observability", desc: "Consolidate your logs, metrics, application traces, and system availability with purpose-built UIs." },
