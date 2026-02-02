@@ -24,7 +24,7 @@ const axiosInstance = axios.create(config);
 // Request interceptor to attach authorization token
 axiosInstance.interceptors.request.use(
   (request) => {
-    const token = Cookies.get("token");
+    const token = localStorage.getItem("token");
 
     // Attach the authorization token if available
     if (token) {
