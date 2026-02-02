@@ -1,13 +1,45 @@
-import React from 'react';
-import { Search, ChevronRight, ListPlus, Filter } from 'lucide-react'; // استخدم أي مكتبة أيقونات تفضلها
-
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp, PlusSquare, Database, Calendar } from 'lucide-react';
+import { ListPlus , Search , Filter ,  } from 'lucide-react';
 export default function DiscoverSideBar() {
-  const fieldCategories = [
-    { name: "Popular fields", count: 8 },
-    { name: "Available fields", count: 534 },
-    { name: "Empty fields", count: 1023 },
-    { name: "Meta fields", count: 9 },
+  const [selectedFilters, setSelectedFilters] = useState([]);
+  
+  // حالة لفتح وإغلاق القوائم (Accordion state)
+  const [openSections, setOpenSections] = useState({ popular: true, available: true });
+
+  const popularFields = ["agent.hostname", "agent.version"];
+  const availableFields = [
+    { name: "@timestamp", type: "date" },
+    { name: "agent.ephemeral_id", type: "string" },
+    { name: "agent.hostname", type: "string" },
+    { name: "agent.id", type: "string" },
+    { name: "agent.name", type: "string" },
+    { name: "agent.type", type: "string" },
+    { name: "agent.version", type: "string" },
+    { name: "data_stream.dataset", type: "string" },
+    { name: "data_stream.namespace", type: "string" },
+    { name: "data_stream.type", type: "string" },
+    { name: "ecs.version", type: "string" },
+    { name: "error.message", type: "string" },
+    { name: "event.action", type: "string" },
+    { name: "event.code", type: "string" },
+    { name: "event.created", type: "date" },
+    { name: "event.kind", type: "string" },
+    { name: "event.outcome", type: "string" },
+    { name: "event.provider", type: "string" },
+    { name: "host.name", type: "string" },
+    { name: "log.level", type: "string" },
+    { name: "message", type: "string" },
   ];
+
+  // دالة لإضافة أو إزالة الفلتر عند الضغط عليه
+  const toggleFilter = (filterName) => {
+    setSelectedFilters((prev) =>
+      prev.includes(filterName)
+        ? prev.filter((item) => item !== filterName) // إزالة إذا كان موجوداً
+        : [...prev, filterName] // إضافة إذا لم يكن موجوداً
+    );
+  };
 
   return (
     <aside className="col-span-2 h-full bg-primary border-r border-white/10 flex flex-col overflow-hidden">
@@ -37,30 +69,86 @@ export default function DiscoverSideBar() {
       </div>
 
       {/* 2. قائمة التصنيفات (Fields Categories) */}
-      <div className="flex-1 overflow-y-auto px-2 py-4 space-y-2">
-        {fieldCategories.map((cat, index) => (
-          <div 
-            key={index} 
-            className="group flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <ChevronRight size={14} className="text-gray-500 group-hover:text-white" />
-              <span className="text-sm font-medium">{cat.name}</span>
-            </div>
-            <span className="bg-second/50 text-[10px] px-2 py-0.5 rounded-full text-gray-300">
-              {cat.count}
-            </span>
+      <div className="w-64 bg-[#030712] h-screen text-gray-300 p-4 font-sans border-r border-gray-800 overflow-y-auto">
+      
+      {/* Popular Fields Section */}
+      <div className="mb-6">
+        <div 
+          className="flex items-center justify-between cursor-pointer mb-3 hover:text-white"
+          onClick={() => setOpenSections(prev => ({ ...prev, popular: !prev.popular }))}
+        >
+          <div className="flex items-center gap-2">
+            {openSections.popular ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+            <span className="text-sm font-semibold">Popular fields</span>
           </div>
-        ))}
+          <span className="bg-gray-800 text-xs px-2 py-0.5 rounded-full">2</span>
+        </div>
+
+        {openSections.popular && (
+          <div className="space-y-2 ml-6">
+            {popularFields.map((field) => (
+              <div 
+                key={field}
+                onClick={() => toggleFilter(field)}
+                className={`flex items-center gap-2 text-sm cursor-pointer hover:text-third transition-colors ${selectedFilters.includes(field) ? 'text-third font-bold' : ''}`}
+              >
+                <div className="bg-gray-800 p-1 rounded text-[10px] font-bold">k</div>
+                {field}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* 3. زر إضافة حقل (Add a field) - ثابت في الأسفل */}
-      <div className="p-3 border-t border-white/10">
-        <button className="w-full flex items-center justify-center gap-2 border border-white/10 py-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer">
-          <ListPlus size={16} />
-          <span className="text-sm font-bold">Add a field</span>
-        </button>
+      {/* Available Fields Section */}
+      <div>
+        <div 
+          className="flex items-center justify-between cursor-pointer mb-3 hover:text-white"
+          onClick={() => setOpenSections(prev => ({ ...prev, available: !prev.available }))}
+        >
+          <div className="flex items-center gap-2">
+            {openSections.available ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+            <span className="text-sm font-semibold">Available fields</span>
+          </div>
+          <span className="bg-gray-800 text-[10px] px-2 py-0.5 rounded-full">534</span>
+        </div>
+
+        {openSections.available && (
+          <div className="space-y-2 ml-6 mb-6">
+            {availableFields.map((field) => (
+              <div 
+                key={field.name}
+                onClick={() => toggleFilter(field.name)}
+                className={`flex items-center gap-2 text-sm cursor-pointer hover:text-third transition-colors ${selectedFilters.includes(field.name) ? 'text-third font-bold' : ''}`}
+              >
+                <div className="bg-gray-800/50 p-1 rounded">
+                  {field.icon}
+                </div>
+                {field.name}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Add a field Button */}
+      <button className="w-full mt-4 flex items-center justify-center gap-2 border border-gray-700 rounded-md py-2 text-sm font-medium hover:bg-gray-800 transition-all active:scale-95">
+        <PlusSquare size={18} />
+        Add a field
+      </button>
+
+      {/* عرض الفلاتر المختارة للتأكد (يمكنك حذفه لاحقاً) */}
+      <div className="mt-8 pt-4 border-t border-gray-800">
+        <p className="text-[10px] uppercase text-gray-500 mb-2">Active Filters:</p>
+        <div className="flex flex-wrap gap-1">
+          {selectedFilters.map(f => (
+            <span key={f} className="bg-third text-font text-[10px] px-2 py-1 rounded">
+              {f}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
     </aside>
   );
 }
