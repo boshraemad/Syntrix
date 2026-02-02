@@ -19,24 +19,22 @@ export default function Login() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden font-poppins">
       
-      {/* 1. التدرج العلوي (الوهج اللي فوق على الشمال) */}
       <div className="absolute -top-20 -left-20 w-[450px] h-[450px] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-
-      {/* 2. الصورة اللي فوق يمين (الـ SVG بتاعك) */}
+ 
       <img 
         className='absolute -top-10 -right-10 w-64 md:w-96 opacity-80 pointer-events-none' 
         src="/Top-puple.svg" 
         alt="" 
       />
 
-      {/* 3. الصورة اللي تحت شمال (الـ SVG بتاعك) */}
+
       <img 
         className='absolute -bottom-10 -left-10 w-64 md:w-96 opacity-80 pointer-events-none' 
         src="/bottom-puple.svg" 
         alt="" 
       />
 
-      {/* 4. توهج إضافي ناحية اليمين لزيادة العمق */}
+
       <div className="absolute top-1/4 -right-20 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
       <motion.div 

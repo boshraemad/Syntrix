@@ -5,9 +5,15 @@ import SearchBar from './SearchBar'
 import { Link } from 'react-router-dom'
 import { logout , logoutAll } from '@/services/auth.services'
 export default function NavBar() {
-  const clickLogout = async()=>{
-    logout();
-  }
+  const clickLogout = async () => {
+    try {
+      await logout(); 
+      await logoutAll(); 
+      console.log("Logged out from all devices successfully");
+    } catch (error) {
+      console.error("Error during logout process:", error);
+    }
+  };
   return (
     <div className="bg-second h-11.25 flex justify-between items-center p-2">
         <Logo/>

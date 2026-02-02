@@ -7,16 +7,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 const queryClient = new QueryClient();
 function App() {
   return (
-    // <QueryClientProvider client={queryClient}>
-    //   <AuthProvider>
-    //   <ReactQueryDevtools open={false}/>
-    //   <AppRouter/>
-    //   <Toaster/>
-    // </AuthProvider>
-    // </QueryClientProvider>
     <>
-    <AppRouter/>
-    <Toaster/>
+      <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+      <AppRouter/>
+      <Toaster/>
+    </AuthProvider>
+    </QueryClientProvider>
     </>
   )
 }

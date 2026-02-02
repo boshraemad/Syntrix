@@ -1,9 +1,8 @@
 import React from "react";
-import Cookies from "js-cookie";
 import { Navigate, useLocation } from "react-router-dom";
 
 
-export default function Authenticator(children) {
+export default function Authenticator({children}) {
     const location = useLocation();
     const token = localStorage.getItem("token")
     const currentPath = location.pathname;

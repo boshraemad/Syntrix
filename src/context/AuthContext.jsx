@@ -3,16 +3,14 @@ import { useState } from "react";
 
 const AuthContext = createContext();
 export default function AuthProvider({children}) {
-    const [accessToken , setAccessToken]=useState(()=>localStorage.getItem("accessToken"));
-    const [refreshToken , setRefreshToken]=useState(()=>localStorage.getItem("refreshToken"));
+    const [accessToken , setAccessToken]=useState(()=>localStorage.getItem("token"));
 
     const logout=()=>{
       setAccessToken(null);
-      setRefreshToken(null);
       localStorage.clear();
     }
   return (
-    <AuthContext.Provider value={{accessToken , setAccessToken , refreshToken , setRefreshToken , logout}}>
+    <AuthContext.Provider value={{accessToken , setAccessToken , logout}}>
         {children}
     </AuthContext.Provider>
   )
