@@ -1,13 +1,36 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import chartImage from "../assets/Chart.png";
+import observabilityImage from "../assets/observability_icon.png";
+import securityImage from "../assets/Security_Shield.png";
+import { useNavigate } from 'react-router-dom';
 export default function HomePage() {
 const {accessToken} = useAuth();
+const navigate = useNavigate();
 console.log(accessToken);
-
   const features = [
-    { title: "Observability", desc: "Consolidate your logs, metrics, application traces, and system availability with purpose-built UIs." },
-    { title: "Security", desc: "Prevent, collect, detect, and respond to threats for unified protection across your infrastructure." },
-    { title: "Analytics", desc: "Explore, visualize, and analyze your data using a powerful suite of analytical tools and applications." }
+    {
+      title: "Observability",
+      description: "Consolidate your logs, metrics, application traces, and system availability with purpose-built UIs.",
+      // استبدل الرابط بمسار الصورة المحلي لديك
+      image: chartImage, 
+      path: "/discover",
+      gradient: "from-blue-900/40 to-purple-900/20"
+    },
+    {
+      title: "Security",
+      description: "Prevent, collect, detect, and respond to threats for unified protection across your infrastructure.",
+      image: securityImage,
+      path: "/security", // أو مسار صفحة الحماية
+      gradient: "from-blue-900/40 to-indigo-900/20"
+    },
+    {
+      title: "Analytics",
+      description: "Explore, visualize, and analyze your data using a powerful suite of analytical tools and applications.",
+      image: observabilityImage,
+      path: "/analytics",
+      gradient: "from-blue-900/40 to-blue-800/20"
+    }
   ];
 
   return (
@@ -15,18 +38,38 @@ console.log(accessToken);
         <h1 className="text-3xl font-bold mb-12">Welcome home</h1>
 
         {/* Three Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {features.map((feature, index) => (
-            <div 
-              key={index} 
-              className="bg-second/40 border border-white/10 rounded-2xl p-10 flex flex-col items-center text-center hover:bg-second/60 transition-all cursor-pointer group"
-            >
-              <div className="w-full h-40 bg-linear-to-b from-third/50 to-transparent rounded-xl mb-6 group-hover:from-third/70 transition-all"></div>
-              <h2 className="text-xl font-bold mb-4">{feature.title}</h2>
-              <p className="text-sm text-gray-400 leading-relaxed">{feature.desc}</p>
+      {/* حاوية البطاقات المستوحاة من AppRouter structure */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        {features.map((feature, index) => (
+          <div 
+            key={index}
+            onClick={() => navigate(feature.path)}
+            className={`group relative overflow-hidden bg-gradient-to-br ${feature.gradient} 
+                        border border-gray-800 rounded-3xl p-10 flex flex-col items-center 
+                        text-center hover:border-blue-500/50 transition-all duration-300 
+                        cursor-pointer hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]`}
+          >
+            {/* Image Section بدلاً من الايكونز */}
+            <div className="mb-8 transform group-hover:scale-110 transition-transform duration-500">
+              <img 
+                src={feature.image} 
+                alt={feature.title}
+                className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+              />
             </div>
-          ))}
-        </div>
+
+            {/* Title */}
+            <h2 className="text-2xl font-bold mb-5 group-hover:text-blue-400 transition-colors">
+              {feature.title}
+            </h2>
+
+            {/* Description */}
+            <p className="text-gray-400 text-base leading-relaxed font-light px-2">
+              {feature.description}
+            </p>
+          </div>
+        ))}
+      </div>
 
         <hr className="border-white/10 mb-16" />
 
