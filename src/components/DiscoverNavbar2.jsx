@@ -150,7 +150,7 @@ const NAV_ACTIONS = ["New", "Open", "Share", "Alerts", "Inspect"];
 
 export default function DiscoverNavbar2({ onRefresh }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-[#111216] border-b border-gray-700/60">
+    <div className="flex items-center gap-2 px-4 py-2  border-b border-gray-700/60">
       {/* Left side: hamburger + Discover badge */}
       <button className="p-1.5 rounded hover:bg-gray-700/50 text-gray-400 hover:text-white">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
