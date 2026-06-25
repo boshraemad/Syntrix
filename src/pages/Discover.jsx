@@ -1,8 +1,3 @@
-<<<<<<< Updated upstream
-import { Save } from 'lucide-react'
-import React from 'react'
-import DiscoverBottom from '@/component/DiscoverNavbar2'
-=======
 // src/pages/Discover.jsx
 import { useState, useMemo } from "react";
 import { BarChart2, Table, ArrowUpDown } from "lucide-react";
@@ -21,7 +16,9 @@ import {
 } from "@/utils/discoverMockData";
 
 const TABS = ["Documents", "Field statistics"];
->>>>>>> Stashed changes
+
+import DiscoverSideBar from '@/component/DiscoverSideBar'
+
 
 export default function Discover() {
   const [query, setQuery] = useState("");
@@ -47,10 +44,8 @@ export default function Discover() {
   };
 
   return (
-<<<<<<< Updated upstream
-    <div className='text-font'><DiscoverBottom/></div>
-<>
-<div className='flex items-center justify-between'>
+    <>
+    <div className='flex items-center justify-between'>
       <span className='bg-[#1F2029] text-font px-2.5 py-1'>Discover</span>
       <div className='flex items-center gap-3'>
       <ul className='flex items-center gap-5'>
@@ -62,9 +57,17 @@ export default function Discover() {
       <button className='flex items-center justify-center gap-2 bg-font text-third w-24.5 px-2.5 py-1 rounded-sm font-semibold cursor-pointer'><Save className='w-4 h-4'/><span className='text-xs'>Save</span></button>
       </div>
     </div>
-</>
+    <div className='text-font'><DiscoverBottom/></div>
+    <div className='grid grid-cols-12 gap-3 border-t border-white/10 mt-2 h-screen'>
+      <DiscoverSideBar/>
+      <main className='col-span-10 '>
+
+      </main>
+    </div>
+    </>
+
   )
-=======
+
     <div className="flex flex-col h-screen bg-[#0d0f14] text-white overflow-hidden">
       {/* Secondary nav bar */}
       <DiscoverNavbar2 onRefresh={handleRefresh} />
@@ -154,5 +157,5 @@ export default function Discover() {
       </div>
     </div>
   );
->>>>>>> Stashed changes
+
 }
