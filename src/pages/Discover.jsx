@@ -1,3 +1,6 @@
+
+// src/pages/Discover.jsx
+
 import { useState, useMemo } from "react";
 import { BarChart2, Table, ArrowUpDown, Save, ChevronDown } from "lucide-react"; // تم إضافة ChevronDown هنا
 
@@ -15,6 +18,8 @@ import {
 } from "@/utils/discoverMockData";
 
 const TABS = ["Documents", "Field statistics"];
+
+
 
 export default function Discover() {
   const [query, setQuery] = useState("");

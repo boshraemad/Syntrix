@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
+
 import { ChevronDown, ChevronUp, PlusSquare, Search, Filter, ListPlus } from 'lucide-react';
+
+
+import { ChevronDown, ChevronUp, PlusSquare, Database, Calendar } from 'lucide-react';
+import { ListPlus , Search , Filter ,  } from 'lucide-react';
 
 export default function DiscoverSideBar() {
   const [selectedFilters, setSelectedFilters] = useState([]);
