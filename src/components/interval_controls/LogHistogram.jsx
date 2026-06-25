@@ -98,7 +98,7 @@ export default function LogHistogram({ data, dateRange }) {
   };
 
   return (
-    <div className="relative w-full" style={{ height: 120 }}>
+    <div className="relative w-full b" style={{ height: 120 }}>
       <canvas
         ref={canvasRef}
         className="w-full h-full"

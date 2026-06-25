@@ -1,6 +1,8 @@
+
 // src/pages/Discover.jsx
+
 import { useState, useMemo } from "react";
-import { BarChart2, Table, ArrowUpDown } from "lucide-react";
+import { BarChart2, Table, ArrowUpDown, Save, ChevronDown } from "lucide-react"; // تم إضافة ChevronDown هنا
 
 import DiscoverNavbar2 from "@/components/DiscoverNavbar2";
 import DiscoverSideBar from "@/components/DiscoverSideBar";
@@ -17,7 +19,6 @@ import {
 
 const TABS = ["Documents", "Field statistics"];
 
-import DiscoverSideBar from '@/component/DiscoverSideBar'
 
 
 export default function Discover() {
@@ -25,7 +26,7 @@ export default function Discover() {
   const [activeTab, setActiveTab] = useState("Documents");
   const [columns] = useState(["@timestamp", "Document"]);
 
-  // Filter documents by KQL-like query (simple substring match for mock)
+  // تصفية البيانات بناءً على نص البحث الكود يشبه الـ KQL بشكل مبسط
   const filteredDocs = useMemo(() => {
     if (!query.trim()) return MOCK_DOCUMENTS;
     const q = query.toLowerCase();
@@ -35,44 +36,34 @@ export default function Discover() {
   }, [query]);
 
   const handleRefresh = () => {
-    // In a real app this would re-fetch; here it's a no-op
+    // تحديث البيانات من السيرفر (في المشروع الفعلي)
   };
 
   const handleAddField = (fieldName) => {
-    // In a real app, add fieldName to the columns array
     console.log("Add column:", fieldName);
   };
 
   return (
-    <>
-    <div className='flex items-center justify-between'>
-      <span className='bg-[#1F2029] text-font px-2.5 py-1'>Discover</span>
-      <div className='flex items-center gap-3'>
-      <ul className='flex items-center gap-5'>
-        <li>New</li>
-        <li>Open</li>
-        <li>Share</li>
-        <li>Alerts</li>
-      </ul>
-      <button className='flex items-center justify-center gap-2 bg-font text-third w-24.5 px-2.5 py-1 rounded-sm font-semibold cursor-pointer'><Save className='w-4 h-4'/><span className='text-xs'>Save</span></button>
+    <div className="flex flex-col h-screen text-white overflow-hidden">
+      
+      {/* 1. الشريط العلوي الرئيسي (Header) */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+        <span className="bg-[#1F2029] text-white px-2.5 py-1 text-sm rounded">Discover</span>
+        <div className="flex items-center gap-3">
+          <ul className="flex items-center gap-5 text-xs text-gray-400">
+            <li className="cursor-pointer hover:text-white transition-colors">New</li>
+            <li className="cursor-pointer hover:text-white transition-colors">Open</li>
+            <li className="cursor-pointer hover:text-white transition-colors">Share</li>
+            <li className="cursor-pointer hover:text-white transition-colors">Alerts</li>
+          </ul>
+          <button className="flex items-center justify-center gap-2 bg-white text-black px-3 py-1 rounded-sm font-semibold cursor-pointer hover:bg-gray-200 transition-colors">
+            <Save className="w-4 h-4" />
+            <span className="text-xs">Save</span>
+          </button>
+        </div>
       </div>
-    </div>
-    <div className='text-font'><DiscoverBottom/></div>
-    <div className='grid grid-cols-12 gap-3 border-t border-white/10 mt-2 h-screen'>
-      <DiscoverSideBar/>
-      <main className='col-span-10 '>
 
-      </main>
-    </div>
-    </>
-
-  )
-
-    <div className="flex flex-col h-screen bg-[#0d0f14] text-white overflow-hidden">
-      {/* Secondary nav bar */}
-      <DiscoverNavbar2 onRefresh={handleRefresh} />
-
-      {/* KQL search + date bar */}
+      {/* 3. شريط البحث المتقدم KQL والوقت */}
       <KqlSearchBar
         query={query}
         onChange={setQuery}
@@ -81,15 +72,35 @@ export default function Discover() {
         onRefresh={handleRefresh}
       />
 
-      {/* Main layout: sidebar + content */}
+      {/* 4. مساحة العمل الرئيسية تقسيم السايدبار والمحتوى */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar */}
+        {/* السايدبار الأيسر */}
         <DiscoverSideBar fields={MOCK_FIELDS} onAddField={handleAddField} />
 
-        {/* Right panel */}
+        {/* مساحة العرض اليمنى */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Histogram */}
+          
+          {/* مخطط الهستوجرام */}
           <div className="px-4 pt-3 pb-1 border-b border-gray-700/40 bg-[#0d0f14]">
+            
+            {/* تم نقل أزرار الـ Interval و Breakdown هنا فوق التايم لاين */}
+            <div className="flex items-center gap-2 mb-2">
+              <button className="p-1.5 rounded border border-gray-600/50 bg-gray-800 text-gray-400 hover:text-white flex-shrink-0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="1" y="1" width="5" height="5" rx="0.5" />
+                  <rect x="8" y="1" width="5" height="5" rx="0.5" />
+                  <rect x="1" y="8" width="5" height="5" rx="0.5" />
+                  <rect x="8" y="8" width="5" height="5" rx="0.5" />
+                </svg>
+              </button>
+              <button className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-600/50 bg-gray-800 text-xs text-gray-300 hover:border-gray-500 hover:text-white">
+                Auto interval <ChevronDown size={11} className="text-gray-500" />
+              </button>
+              <button className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-600/50 bg-gray-800 text-xs text-gray-300 hover:border-gray-500 hover:text-white">
+                No breakdown <ChevronDown size={11} className="text-gray-500" />
+              </button>
+            </div>
+
             <LogHistogram data={MOCK_HISTOGRAM} dateRange={DATE_RANGE} />
             <p className="text-[10px] text-gray-500 mt-1 text-center">
               {DATE_RANGE.from} → {DATE_RANGE.to}&nbsp;&nbsp;
@@ -97,8 +108,8 @@ export default function Discover() {
             </p>
           </div>
 
-          {/* Tab bar + table header */}
-          <div className="flex items-center justify-between px-4 py-0 border-b border-gray-700/60 bg-[#111216] flex-shrink-0">
+          {/* التبديل بين التبويبات (Tabs) وأدوات العرض */}
+          <div className="flex items-center justify-between px-4 border-b border-gray-700/60 flex-shrink-0">
             <div className="flex items-center gap-0">
               {TABS.map((tab) => (
                 <button
@@ -121,41 +132,36 @@ export default function Discover() {
                 </button>
               ))}
             </div>
+
             <div className="flex items-center gap-2 py-1.5">
-              <button className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 border border-gray-600/50 rounded hover:text-white hover:border-gray-500">
+              <button className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 border border-gray-600/50 rounded hover:text-white hover:border-gray-500 transition-all">
                 <ArrowUpDown size={11} />
                 Sort fields
                 <span className="ml-0.5 bg-blue-600 text-white rounded text-[10px] px-1">1</span>
               </button>
-              {/* View toggles */}
-              <button className="p-1.5 rounded border border-gray-600/50 text-gray-400 hover:text-white hover:border-gray-500">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                  <rect x="1" y="1" width="12" height="2.5" rx="0.5" />
-                  <rect x="1" y="5.75" width="12" height="2.5" rx="0.5" />
-                  <rect x="1" y="10.5" width="12" height="2.5" rx="0.5" />
-                </svg>
-              </button>
-              <button className="p-1.5 rounded border border-gray-600/50 text-gray-400 hover:text-white hover:border-gray-500">
+              <button className="p-1.5 rounded border border-gray-600/50 text-gray-400 hover:text-white hover:border-gray-500 transition-all">
                 <BarChart2 size={14} />
               </button>
-              <button className="p-1.5 rounded border border-gray-600/50 text-gray-400 hover:text-white hover:border-gray-500">
+              <button className="p-1.5 rounded border border-gray-600/50 text-gray-400 hover:text-white hover:border-gray-500 transition-all">
                 <Table size={14} />
               </button>
             </div>
           </div>
 
-          {/* Document table */}
-          {activeTab === "Documents" && (
-            <DocumentTable documents={filteredDocs} columns={columns} />
-          )}
-          {activeTab === "Field statistics" && (
-            <div className="flex-1 flex items-center justify-center text-gray-600 text-sm">
-              Field statistics view — connect to backend to populate.
-            </div>
-          )}
+          {/* محتوى جدول الوثائق بناءً على التبويب النشط */}
+          <div className="flex-1 overflow-auto">
+            {activeTab === "Documents" && (
+              <DocumentTable documents={filteredDocs} columns={columns} />
+            )}
+            {activeTab === "Field statistics" && (
+              <div className="flex h-full items-center justify-center text-gray-600 text-sm">
+                Field statistics view — connect to backend to populate.
+              </div>
+            )}
+          </div>
+          
         </main>
       </div>
     </div>
   );
-
 }

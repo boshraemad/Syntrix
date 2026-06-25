@@ -6,7 +6,7 @@ export default function KqlSearchBar({ query, onChange, dateFrom, dateTo, onRefr
   const [focused, setFocused] = useState(false);
 
   return (
-    <div className="px-3 py-2 bg-[#111216] border-b border-gray-700/60 space-y-2">
+    <div className="px-3 py-2  border-b border-gray-700/60 space-y-2">
       {/* Row 1: filter icons + KQL input + date + refresh */}
       <div className="flex items-center gap-2">
         {/* Filter controls */}
@@ -56,7 +56,7 @@ export default function KqlSearchBar({ query, onChange, dateFrom, dateTo, onRefr
       </div>
 
       {/* Row 2: interval + breakdown controls */}
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <button className="p-1.5 rounded border border-gray-600/50 bg-gray-800 text-gray-400 hover:text-white flex-shrink-0">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
             <rect x="1" y="1" width="5" height="5" rx="0.5" />
@@ -71,7 +71,7 @@ export default function KqlSearchBar({ query, onChange, dateFrom, dateTo, onRefr
         <button className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-600/50 bg-gray-800 text-xs text-gray-300 hover:border-gray-500 hover:text-white">
           No breakdown <ChevronDown size={11} className="text-gray-500" />
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }

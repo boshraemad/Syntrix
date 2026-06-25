@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
+
+import { ChevronDown, ChevronUp, PlusSquare, Search, Filter, ListPlus } from 'lucide-react';
+
+
 import { ChevronDown, ChevronUp, PlusSquare, Database, Calendar } from 'lucide-react';
 import { ListPlus , Search , Filter ,  } from 'lucide-react';
+
 export default function DiscoverSideBar() {
   const [selectedFilters, setSelectedFilters] = useState([]);
   
@@ -71,84 +76,84 @@ export default function DiscoverSideBar() {
       {/* 2. قائمة التصنيفات (Fields Categories) */}
       <div className="w-64 bg-[#030712] h-screen text-gray-300 p-4 font-sans border-r border-gray-800 overflow-y-auto">
       
-      {/* Popular Fields Section */}
-      <div className="mb-6">
-        <div 
-          className="flex items-center justify-between cursor-pointer mb-3 hover:text-white"
-          onClick={() => setOpenSections(prev => ({ ...prev, popular: !prev.popular }))}
-        >
-          <div className="flex items-center gap-2">
-            {openSections.popular ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-            <span className="text-sm font-semibold">Popular fields</span>
+        {/* Popular Fields Section */}
+        <div className="mb-6">
+          <div 
+            className="flex items-center justify-between cursor-pointer mb-3 hover:text-white"
+            onClick={() => setOpenSections(prev => ({ ...prev, popular: !prev.popular }))}
+          >
+            <div className="flex items-center gap-2">
+              {openSections.popular ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+              <span className="text-sm font-semibold">Popular fields</span>
+            </div>
+            <span className="bg-gray-800 text-xs px-2 py-0.5 rounded-full">2</span>
           </div>
-          <span className="bg-gray-800 text-xs px-2 py-0.5 rounded-full">2</span>
-        </div>
 
-        {openSections.popular && (
-          <div className="space-y-2 ml-6">
-            {popularFields.map((field) => (
-              <div 
-                key={field}
-                onClick={() => toggleFilter(field)}
-                className={`flex items-center gap-2 text-sm cursor-pointer hover:text-third transition-colors ${selectedFilters.includes(field) ? 'text-third font-bold' : ''}`}
-              >
-                <div className="bg-gray-800 p-1 rounded text-[10px] font-bold">k</div>
-                {field}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Available Fields Section */}
-      <div>
-        <div 
-          className="flex items-center justify-between cursor-pointer mb-3 hover:text-white"
-          onClick={() => setOpenSections(prev => ({ ...prev, available: !prev.available }))}
-        >
-          <div className="flex items-center gap-2">
-            {openSections.available ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-            <span className="text-sm font-semibold">Available fields</span>
-          </div>
-          <span className="bg-gray-800 text-[10px] px-2 py-0.5 rounded-full">534</span>
-        </div>
-
-        {openSections.available && (
-          <div className="space-y-2 ml-6 mb-6">
-            {availableFields.map((field) => (
-              <div 
-                key={field.name}
-                onClick={() => toggleFilter(field.name)}
-                className={`flex items-center gap-2 text-sm cursor-pointer hover:text-third transition-colors ${selectedFilters.includes(field.name) ? 'text-third font-bold' : ''}`}
-              >
-                <div className="bg-gray-800/50 p-1 rounded">
-                  {field.icon}
+          {openSections.popular && (
+            <div className="space-y-2 ml-6">
+              {popularFields.map((field) => (
+                <div 
+                  key={field}
+                  onClick={() => toggleFilter(field)}
+                  className={`flex items-center gap-2 text-sm cursor-pointer hover:text-third transition-colors ${selectedFilters.includes(field) ? 'text-third font-bold' : ''}`}
+                >
+                  <div className="bg-gray-800 p-1 rounded text-[10px] font-bold">k</div>
+                  {field}
                 </div>
-                {field.name}
-              </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Available Fields Section */}
+        <div>
+          <div 
+            className="flex items-center justify-between cursor-pointer mb-3 hover:text-white"
+            onClick={() => setOpenSections(prev => ({ ...prev, available: !prev.available }))}
+          >
+            <div className="flex items-center gap-2">
+              {openSections.available ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+              <span className="text-sm font-semibold">Available fields</span>
+            </div>
+            <span className="bg-gray-800 text-[10px] px-2 py-0.5 rounded-full">534</span>
+          </div>
+
+          {openSections.available && (
+            <div className="space-y-2 ml-6 mb-6">
+              {availableFields.map((field) => (
+                <div 
+                  key={field.name}
+                  onClick={() => toggleFilter(field.name)}
+                  className={`flex items-center gap-2 text-sm cursor-pointer hover:text-third transition-colors ${selectedFilters.includes(field.name) ? 'text-third font-bold' : ''}`}
+                >
+                  <div className="bg-gray-800/50 p-1 rounded text-[10px] font-bold">
+                    {field.type[0]}
+                  </div>
+                  {field.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Add a field Button */}
+        <button className="w-full mt-4 flex items-center justify-center gap-2 border border-gray-700 rounded-md py-2 text-sm font-medium hover:bg-gray-800 transition-all active:scale-95">
+          <PlusSquare size={18} />
+          Add a field
+        </button>
+
+        {/* عرض الفلاتر المختارة للتأكد */}
+        <div className="mt-8 pt-4 border-t border-gray-800">
+          <p className="text-[10px] uppercase text-gray-500 mb-2">Active Filters:</p>
+          <div className="flex flex-wrap gap-1">
+            {selectedFilters.map(f => (
+              <span key={f} className="bg-blue-600 text-white text-[10px] px-2 py-1 rounded">
+                {f}
+              </span>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Add a field Button */}
-      <button className="w-full mt-4 flex items-center justify-center gap-2 border border-gray-700 rounded-md py-2 text-sm font-medium hover:bg-gray-800 transition-all active:scale-95">
-        <PlusSquare size={18} />
-        Add a field
-      </button>
-
-      {/* عرض الفلاتر المختارة للتأكد (يمكنك حذفه لاحقاً) */}
-      <div className="mt-8 pt-4 border-t border-gray-800">
-        <p className="text-[10px] uppercase text-gray-500 mb-2">Active Filters:</p>
-        <div className="flex flex-wrap gap-1">
-          {selectedFilters.map(f => (
-            <span key={f} className="bg-third text-font text-[10px] px-2 py-1 rounded">
-              {f}
-            </span>
-          ))}
         </div>
       </div>
-    </div>
     </aside>
   );
 }
