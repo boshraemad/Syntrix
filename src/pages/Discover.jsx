@@ -2,7 +2,7 @@
 // src/pages/Discover.jsx
 
 import { useState, useMemo } from "react";
-import { BarChart2, Table, ArrowUpDown, Save, ChevronDown } from "lucide-react"; // تم إضافة ChevronDown هنا
+import { BarChart2, Table, ArrowUpDown, Save, ChevronDown } from "lucide-react";
 
 import DiscoverNavbar2 from "@/components/DiscoverNavbar2";
 import DiscoverSideBar from "@/components/DiscoverSideBar";
@@ -19,14 +19,72 @@ import {
 
 const TABS = ["Documents", "Field statistics"];
 
+const DEFAULT_STAT_FIELDS = ["event.action", "event.outcome", "log.level", "agent.type"];
 
+function FieldStatistics({ documents, fields }) {
+  const statFields = fields.length ? fields : DEFAULT_STAT_FIELDS;
+
+  if (documents.length === 0) {
+    return <div className="p-4 text-gray-600 text-sm">No documents to summarize.</div>;
+  }
+
+  return (
+    <div className="p-4 space-y-4">
+      {statFields.map((field) => {
+        const counts = {};
+        let present = 0;
+        documents.forEach((d) => {
+          const v = d[field];
+          if (v === undefined || v === null || v === "") return;
+          present += 1;
+          const key = String(v);
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        return (
+          <div key={field} className="bg-[#111] border border-white/5 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-mono text-cyan-400">{field}</span>
+              <span className="text-[10px] text-gray-500 uppercase tracking-widest">
+                {present} / {documents.length} docs
+              </span>
+            </div>
+            {top.length === 0 ? (
+              <p className="text-xs text-gray-600 italic">No values in current results.</p>
+            ) : (
+              <div className="space-y-2">
+                {top.map(([val, count]) => {
+                  const pct = present ? Math.round((count / present) * 100) : 0;
+                  return (
+                    <div key={val} className="flex items-center gap-3 text-xs">
+                      <span className="text-gray-300 font-mono truncate w-1/3" title={val}>{val}</span>
+                      <div className="flex-1 h-1.5 bg-[#222] rounded-full overflow-hidden">
+                        <div className="h-full bg-cyan-500/50" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-gray-500 font-mono w-20 text-right">{pct}% ({count})</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {fields.length === 0 && (
+        <p className="text-[11px] text-gray-600">
+          Showing default fields. Add fields from the sidebar to analyze them here.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Discover() {
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState("Documents");
-  const [columns] = useState(["@timestamp", "Document"]);
+  const [selectedFields, setSelectedFields] = useState([]);
 
-  // تصفية البيانات بناءً على نص البحث الكود يشبه الـ KQL بشكل مبسط
+  // Filter the documents by the search text (simplified KQL-like matching)
   const filteredDocs = useMemo(() => {
     if (!query.trim()) return MOCK_DOCUMENTS;
     const q = query.toLowerCase();
@@ -36,34 +94,38 @@ export default function Discover() {
   }, [query]);
 
   const handleRefresh = () => {
-    // تحديث البيانات من السيرفر (في المشروع الفعلي)
+    // Refresh data from the server (in the real project)
   };
 
   const handleAddField = (fieldName) => {
-    console.log("Add column:", fieldName);
+    setSelectedFields((prev) => (prev.includes(fieldName) ? prev : [...prev, fieldName]));
+  };
+
+  const handleRemoveField = (fieldName) => {
+    setSelectedFields((prev) => prev.filter((f) => f !== fieldName));
   };
 
   return (
-    <div className="flex flex-col h-screen text-white overflow-hidden">
+    <div className="flex flex-col flex-1 h-full text-white overflow-hidden">
       
-      {/* 1. الشريط العلوي الرئيسي (Header) */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
-        <span className="bg-[#1F2029] text-white px-2.5 py-1 text-sm rounded">Discover</span>
+      {/* 1. Main top header bar */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-white/5 bg-background">
+        <span className="bg-white/10 text-white px-2.5 py-1 text-sm rounded-sm">Discover</span>
         <div className="flex items-center gap-3">
-          <ul className="flex items-center gap-5 text-xs text-gray-400">
+          <ul className="flex items-center gap-5 text-xs text-gray-500 font-mono tracking-widest uppercase">
             <li className="cursor-pointer hover:text-white transition-colors">New</li>
             <li className="cursor-pointer hover:text-white transition-colors">Open</li>
             <li className="cursor-pointer hover:text-white transition-colors">Share</li>
             <li className="cursor-pointer hover:text-white transition-colors">Alerts</li>
           </ul>
-          <button className="flex items-center justify-center gap-2 bg-white text-black px-3 py-1 rounded-sm font-semibold cursor-pointer hover:bg-gray-200 transition-colors">
+          <button className="flex items-center justify-center gap-2 bg-transparent text-white px-3 py-1 border border-white/10 rounded-sm font-semibold cursor-pointer hover:bg-white hover:text-black transition-colors">
             <Save className="w-4 h-4" />
-            <span className="text-xs">Save</span>
+            <span className="text-xs uppercase tracking-widest font-mono">Save</span>
           </button>
         </div>
       </div>
 
-      {/* 3. شريط البحث المتقدم KQL والوقت */}
+      {/* 3. Advanced KQL search bar and time range */}
       <KqlSearchBar
         query={query}
         onChange={setQuery}
@@ -72,20 +134,20 @@ export default function Discover() {
         onRefresh={handleRefresh}
       />
 
-      {/* 4. مساحة العمل الرئيسية تقسيم السايدبار والمحتوى */}
+      {/* 4. Main workspace: split between sidebar and content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* السايدبار الأيسر */}
+        {/* Left sidebar */}
         <DiscoverSideBar fields={MOCK_FIELDS} onAddField={handleAddField} />
 
-        {/* مساحة العرض اليمنى */}
+        {/* Right display area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          
-          {/* مخطط الهستوجرام */}
-          <div className="px-4 pt-3 pb-1 border-b border-gray-700/40 bg-[#0d0f14]">
-            
-            {/* تم نقل أزرار الـ Interval و Breakdown هنا فوق التايم لاين */}
+
+          {/* Histogram chart */}
+          <div className="px-4 pt-3 pb-1 border-b border-white/5 bg-background">
+
+            {/* Interval and Breakdown controls moved here above the timeline */}
             <div className="flex items-center gap-2 mb-2">
-              <button className="p-1.5 rounded border border-gray-600/50 bg-gray-800 text-gray-400 hover:text-white flex-shrink-0">
+              <button className="p-1.5 rounded-sm border border-white/10 bg-transparent text-gray-500 hover:text-white flex-shrink-0 cursor-pointer">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <rect x="1" y="1" width="5" height="5" rx="0.5" />
                   <rect x="8" y="1" width="5" height="5" rx="0.5" />
@@ -93,10 +155,10 @@ export default function Discover() {
                   <rect x="8" y="8" width="5" height="5" rx="0.5" />
                 </svg>
               </button>
-              <button className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-600/50 bg-gray-800 text-xs text-gray-300 hover:border-gray-500 hover:text-white">
+              <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-white/10 bg-transparent text-xs text-gray-500 hover:border-white/20 hover:text-white cursor-pointer font-mono tracking-widest uppercase">
                 Auto interval <ChevronDown size={11} className="text-gray-500" />
               </button>
-              <button className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-600/50 bg-gray-800 text-xs text-gray-300 hover:border-gray-500 hover:text-white">
+              <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-white/10 bg-transparent text-xs text-gray-500 hover:border-white/20 hover:text-white cursor-pointer font-mono tracking-widest uppercase">
                 No breakdown <ChevronDown size={11} className="text-gray-500" />
               </button>
             </div>
@@ -108,23 +170,23 @@ export default function Discover() {
             </p>
           </div>
 
-          {/* التبديل بين التبويبات (Tabs) وأدوات العرض */}
-          <div className="flex items-center justify-between px-4 border-b border-gray-700/60 flex-shrink-0">
+          {/* Tab switching and view tools */}
+          <div className="flex items-center justify-between px-4 border-b border-white/5 flex-shrink-0 bg-background">
             <div className="flex items-center gap-0">
               {TABS.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+                  className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-widest font-mono border-b-2 transition-colors cursor-pointer ${
                     activeTab === tab
-                      ? "border-blue-500 text-blue-400"
-                      : "border-transparent text-gray-400 hover:text-gray-200"
+                      ? "border-white text-white"
+                      : "border-transparent text-gray-500 hover:text-white"
                   }`}
                 >
                   {tab === "Documents" ? (
                     <span>
                       Documents{" "}
-                      <span className="text-gray-500">({filteredDocs.length})</span>
+                      <span className="text-gray-600">({filteredDocs.length})</span>
                     </span>
                   ) : (
                     tab
@@ -134,29 +196,31 @@ export default function Discover() {
             </div>
 
             <div className="flex items-center gap-2 py-1.5">
-              <button className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 border border-gray-600/50 rounded hover:text-white hover:border-gray-500 transition-all">
+              <button className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 border border-white/10 rounded-sm hover:text-white hover:border-white/20 transition-all cursor-pointer font-mono uppercase tracking-widest">
                 <ArrowUpDown size={11} />
                 Sort fields
-                <span className="ml-0.5 bg-blue-600 text-white rounded text-[10px] px-1">1</span>
+                <span className="ml-0.5 bg-white text-black rounded-sm text-[10px] px-1 font-bold">1</span>
               </button>
-              <button className="p-1.5 rounded border border-gray-600/50 text-gray-400 hover:text-white hover:border-gray-500 transition-all">
+              <button className="p-1.5 rounded-sm border border-white/10 text-gray-500 hover:text-white hover:border-white/20 transition-all cursor-pointer">
                 <BarChart2 size={14} />
               </button>
-              <button className="p-1.5 rounded border border-gray-600/50 text-gray-400 hover:text-white hover:border-gray-500 transition-all">
+              <button className="p-1.5 rounded-sm border border-white/10 text-gray-500 hover:text-white hover:border-white/20 transition-all cursor-pointer">
                 <Table size={14} />
               </button>
             </div>
           </div>
 
-          {/* محتوى جدول الوثائق بناءً على التبويب النشط */}
-          <div className="flex-1 overflow-auto">
+          {/* Document table content based on the active tab */}
+          <div className="flex-1 overflow-auto bg-[#0a0a0a]">
             {activeTab === "Documents" && (
-              <DocumentTable documents={filteredDocs} columns={columns} />
+              <DocumentTable
+                documents={filteredDocs}
+                selectedFields={selectedFields}
+                onRemoveField={handleRemoveField}
+              />
             )}
             {activeTab === "Field statistics" && (
-              <div className="flex h-full items-center justify-center text-gray-600 text-sm">
-                Field statistics view — connect to backend to populate.
-              </div>
+              <FieldStatistics documents={filteredDocs} fields={selectedFields} />
             )}
           </div>
           

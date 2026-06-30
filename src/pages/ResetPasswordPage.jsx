@@ -1,105 +1,122 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import AuthLayout from '@/components/AuthLayout';
 
 export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
-  
-  // إعداد React Hook Form
+
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
   } = useForm({
-    mode: "onChange" // التحقق أثناء الكتابة
+    mode: "onChange"
   });
 
-  // مراقبة قيمة كلمة المرور للمقارنة بها
   const password = watch("password");
 
   const onSubmit = async (data) => {
     console.log("Form Data:", data);
-    // هنا يتم استدعاء الـ API الخاص بك
   };
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center p-4 relative overflow-hidden">
-      
-      {/* تأثيرات الإضاءة */}
-      <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-third/15 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <div className="w-full max-w-md relative z-10">
-        <div className="bg-primary/80 backdrop-blur-2xl border border-white/10 p-10 rounded-3xl shadow-2xl">
-          
-          <div className="text-center mb-8">
-            <h1 className="text-font text-3xl font-bold mb-2">Reset Password</h1>
-            <p className="text-gray-400 text-sm">Enter your new password below.</p>
-          </div>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            
-            {/* حقل كلمة المرور الجديدة */}
-            <div>
-              <label className="block text-font text-sm font-medium mb-2 ml-1">New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••"
-                  {...register("password", {
-                    required: "Password is required",
-                    minLength: { value: 8, message: "Must be at least 8 characters" }
-                  })}
-                  className={`w-full bg-second/30 border ${errors.password ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-10 pr-12 text-font focus:outline-none focus:border-third transition-all`}
-                />
-                <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-font"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-red-400 text-xs mt-1 ml-1 flex items-center gap-1">
-                  <AlertCircle size={12} /> {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            {/* حقل تأكيد كلمة المرور */}
-            <div>
-              <label className="block text-font text-sm font-medium mb-2 ml-1">Confirm New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                <input 
-                  type="password" 
-                  placeholder="••••••••"
-                  {...register("confirmPassword", {
-                    required: "Please confirm your password",
-                    validate: (value) => value === password || "Passwords do not match"
-                  })}
-                  className={`w-full bg-second/30 border ${errors.confirmPassword ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-10 pr-4 text-font focus:outline-none focus:border-third transition-all`}
-                />
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-red-400 text-xs mt-1 ml-1 flex items-center gap-1">
-                  <AlertCircle size={12} /> {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-
-            <button 
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-button hover:bg-third text-font font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-button/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-            >
-              {isSubmitting ? "Updating..." : "Update Password"}
-            </button>
-          </form>
-        </div>
+    <AuthLayout>
+      {/* Header */}
+      <div className="mb-12">
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-3xl font-semibold mb-2 text-white"
+        >
+          Reset Password
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-gray-500 text-sm"
+        >
+          Enter your new password below.
+        </motion.p>
       </div>
-    </div>
+
+      {/* Form */}
+      <motion.form
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.45 }}
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-8"
+      >
+        {/* New Password */}
+        <div className="space-y-2 group">
+          <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest transition-colors group-focus-within:text-white">
+            New Password
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              {...register("password", {
+                required: "Password is required",
+                minLength: { value: 8, message: "Must be at least 8 characters" }
+              })}
+              className={`w-full bg-transparent border-b ${errors.password ? 'border-red-400' : 'border-white/10'} px-0 py-2 pr-10 text-white focus:outline-none focus:border-white transition-all placeholder:text-gray-700`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors p-1"
+            >
+              {showPassword ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
+        {/* Confirm Password */}
+        <div className="space-y-2 group">
+          <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest transition-colors group-focus-within:text-white">
+            Confirm New Password
+          </label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            {...register("confirmPassword", {
+              required: "Please confirm your password",
+              validate: (value) => value === password || "Passwords do not match"
+            })}
+            className={`w-full bg-transparent border-b ${errors.confirmPassword ? 'border-red-400' : 'border-white/10'} px-0 py-2 text-white focus:outline-none focus:border-white transition-all placeholder:text-gray-700`}
+          />
+          {errors.confirmPassword && (
+            <p className="text-red-400 text-xs mt-1">{errors.confirmPassword.message}</p>
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-white text-black font-bold py-4 rounded hover:bg-gray-200 transition-colors text-sm uppercase tracking-wider cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+        >
+          {isSubmitting ? 'Updating...' : 'Update Password'}
+        </button>
+      </motion.form>
+    </AuthLayout>
   );
 }

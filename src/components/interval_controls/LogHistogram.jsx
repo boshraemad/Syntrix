@@ -4,6 +4,10 @@ import { useRef, useEffect, useState } from "react";
 export default function LogHistogram({ data, dateRange }) {
   const canvasRef = useRef(null);
   const [tooltip, setTooltip] = useState(null);
+  const [selection, setSelection] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  const PADDING = { top: 8, right: 4, bottom: 30, left: 36 };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -17,7 +21,6 @@ export default function LogHistogram({ data, dateRange }) {
 
     const W = rect.width;
     const H = rect.height;
-    const PADDING = { top: 8, right: 4, bottom: 30, left: 36 };
     const chartW = W - PADDING.left - PADDING.right;
     const chartH = H - PADDING.top - PADDING.bottom;
 
@@ -82,14 +85,31 @@ export default function LogHistogram({ data, dateRange }) {
     ctx.fillText("December 10, 2026", PADDING.left, H - 4);
   }, [data]);
 
+  const getX = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return 0;
+    const rect = canvas.getBoundingClientRect();
+    return Math.max(PADDING.left, Math.min(e.clientX - rect.left, rect.width - PADDING.right));
+  };
+
+  const handleMouseDown = (e) => {
+    const x = getX(e);
+    setIsDragging(true);
+    setSelection({ start: x, end: x });
+  };
+
   const handleMouseMove = (e) => {
+    const x = getX(e);
+    if (isDragging) {
+      setSelection(prev => ({ ...prev, end: x }));
+    }
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const PADDING_LEFT = 36;
-    const chartW = rect.width - PADDING_LEFT - 4;
-    const idx = Math.floor(((x - PADDING_LEFT) / chartW) * data.length);
+    const chartW = rect.width - PADDING.left - PADDING.right;
+    const idx = Math.floor(((x - PADDING.left) / chartW) * data.length);
+    
     if (idx >= 0 && idx < data.length) {
       setTooltip({ x: e.clientX - rect.left, label: data[idx].time, count: data[idx].count });
     } else {
@@ -97,14 +117,45 @@ export default function LogHistogram({ data, dateRange }) {
     }
   };
 
+  const handleMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      // Clear if it was just a click
+      if (selection && Math.abs(selection.end - selection.start) < 5) {
+        setSelection(null);
+      }
+    }
+  };
+
   return (
-    <div className="relative w-full b" style={{ height: 120 }}>
+    <div 
+      className="relative w-full select-none" 
+      style={{ height: 120 }}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={() => {
+        setTooltip(null);
+        handleMouseUp();
+      }}
+    >
       <canvas
         ref={canvasRef}
-        className="w-full h-full"
+        className="w-full h-full cursor-crosshair"
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
-        onMouseLeave={() => setTooltip(null)}
       />
+      
+      {selection && Math.abs(selection.end - selection.start) > 0 && (
+        <div 
+          className="absolute bg-white/20 border-x border-white/40 pointer-events-none"
+          style={{
+            top: PADDING.top,
+            height: 120 - PADDING.top - PADDING.bottom,
+            left: Math.min(selection.start, selection.end),
+            width: Math.abs(selection.end - selection.start)
+          }}
+        />
+      )}
+
       {tooltip && tooltip.count > 0 && (
         <div
           className="absolute z-10 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-gray-200 pointer-events-none"

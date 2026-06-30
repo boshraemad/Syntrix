@@ -4,23 +4,21 @@ import { IoCloseOutline } from "react-icons/io5";
 import { MdOutlineAnalytics, MdOutlineSecurity, MdSettings } from "react-icons/md";
 import { TbTelescope } from "react-icons/tb";
 import { Link, useLocation } from 'react-router-dom';
+import logoImg from '../assets/logo.jpg';
 
-export default function SideBar() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function SideBar({ isOpen, onClose }) {
   const [openSubMenu, setOpenSubMenu] = useState(null);
   const location = useLocation();
   const sidebarRef = useRef(null);
 
-  // 1. إغلاق القائمة عند تغيير المسار
   useEffect(() => {
-    setIsOpen(false);
+    onClose();
   }, [location.pathname]);
 
-  // 2. إغلاق القائمة عند الضغط في أي مكان خارج الـ Sidebar
   useEffect(() => {
     function handleClickOutside(event) {
       if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        setIsOpen(false);
+        onClose();
       }
     }
     
@@ -39,7 +37,7 @@ export default function SideBar() {
     { title: "Home", path: "/", icon: <FaHome /> },
     { 
       title: "Analytics", 
-      path: '/Analytics', // المسار الذي سيتم التوجه إليه عند الضغط
+      path: '/Analytics',
       icon: <MdOutlineAnalytics />,
       subLinks: [
         { name: "Discover", path: "/discover" },
@@ -55,18 +53,18 @@ export default function SideBar() {
       path: '/observability',
       icon: <TbTelescope />, 
       subLinks: [
-        { name: "Logs", path: "/logs" },
-        { name: "Metrics", path: "/metrics" }
+        { name: "Logs", path: "/observability/logs" },
+        { name: "Hosts", path: "/observability/hosts" }
       ] 
     },
-    { 
-      title: "Security", 
+    {
+      title: "Security",
       path: '/security',
-      icon: <MdOutlineSecurity />, 
+      icon: <MdOutlineSecurity />,
       subLinks: [
-        { name: "Overview", path: "/overview" },
-        { name: "Detections", path: "/detections" }
-      ] 
+        { name: "Detection", path: "/security/detection" },
+        { name: "Alerts", path: "/security/alerts" }
+      ]
     },
     { title: "Setting", path: "/setting", icon: <MdSettings /> },
   ];
@@ -85,34 +83,23 @@ export default function SideBar() {
 
   return (
     <>
-      {/* زر الفتح */}
-      {!isOpen && (
-        <div className="p-4 fixed top-15 left-0 z-30">
-          <FaBars 
-            className="text-2xl cursor-pointer text-white hover:text-third transition-colors" 
-            onClick={() => setIsOpen(true)} 
-          />
-        </div>
-      )}
-
       {/* --- Sidebar --- */}
       <div 
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full bg-[#020617] z-50 transition-all duration-300 ${isOpen ? 'w-72' : 'w-0'} overflow-hidden 
-        border-r border-third/40 
-        shadow-[5px_0_25px_-5px_rgba(var(--third-rgb),0.4)]`}
+        className={`fixed top-0 left-0 h-full bg-background z-50 transition-all duration-300 ${isOpen ? 'w-72' : 'w-0'} overflow-hidden 
+        border-r border-[#dadada]/5`}
       > 
         
         <div className="p-4 flex flex-col h-full w-72">
           
           {/* Header */}
           <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-third bg-clip-text text-transparent px-2">
-              Syntrix
-            </h2>
+            <Link to="/" className="px-2 hover:opacity-80 transition-opacity">
+              <img src={logoImg} alt="Syntrix" className="h-24 object-contain" />
+            </Link>
             <IoCloseOutline 
-              className="text-3xl cursor-pointer text-white/50 hover:text-white transition-all" 
-              onClick={() => setIsOpen(false)} 
+              className="text-3xl cursor-pointer text-white/50 hover:text-cyan-400 transition-all" 
+              onClick={onClose} 
             />
           </div>
 
@@ -125,20 +112,20 @@ export default function SideBar() {
               return (
                 <div key={index} className="mb-2">
                   <div 
-                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all 
-                      ${active ? 'bg-third/20 border border-third/50 shadow-[0_0_15px_rgba(var(--third-rgb),0.2)]' : 'hover:bg-white/5'}`}
+                    className={`flex items-center justify-between p-3 rounded-sm cursor-pointer transition-all 
+                      ${active ? 'bg-cyan-500/10 border-l-2 border-cyan-400' : 'hover:bg-purple-500/10 border-l-2 border-transparent'}`}
                   >
-                    {/* اللينك الأساسي للقسم */}
-                    <Link 
+                    {/* Main section link */}
+                    <Link
                       to={item.path || "#"} 
                       onClick={() => hasSubMenu && toggleSubMenu(item.title)}
                       className="flex items-center gap-3 flex-1"
                     >
-                      <span className={`text-xl ${active ? 'text-third' : 'text-white/70'}`}>{item.icon}</span>
-                      <span className={`font-medium ${active ? 'text-white' : 'text-gray-400'}`}>{item.title}</span>
+                      <span className={`text-xl ${active ? 'text-cyan-400' : 'text-gray-500'}`}>{item.icon}</span>
+                      <span className={`font-medium ${active ? 'text-white' : 'text-gray-500'}`}>{item.title}</span>
                     </Link>
                     
-                    {/* سهم لفتح القائمة الفرعية بشكل منفصل لمنع الانتقال للصفحة عند الضغط عليه فقط */}
+                    {/* Separate chevron to toggle the submenu without navigating to the page */}
                     {hasSubMenu && (
                       <div 
                         onClick={(e) => {
@@ -149,24 +136,24 @@ export default function SideBar() {
                         className="p-1 hover:bg-white/10 rounded-md transition-all"
                       >
                         {openSubMenu === item.title ? 
-                          <FaChevronDown className="text-xs text-third" /> : 
-                          <FaChevronRight className="text-xs text-white/40" />
+                          <FaChevronDown className="text-xs text-white" /> : 
+                          <FaChevronRight className="text-xs text-gray-500" />
                         }
                       </div>
                     )}
                   </div>
 
-                  {/* القائمة الفرعية */}
+                  {/* Submenu */}
                   {hasSubMenu && openSubMenu === item.title && (
-                    <div className="ml-9 mt-2 flex flex-col gap-1 border-l border-third/20 pl-4 transition-all">
+                    <div className="ml-9 mt-2 flex flex-col gap-1 border-l border-white/10 pl-4 transition-all">
                       {item.subLinks.map((sub, idx) => {
                         const isSubActive = location.pathname === sub.path;
                         return (
                           <Link 
                             key={idx} 
                             to={sub.path}
-                            className={`text-sm py-2 px-2 rounded-md transition-colors 
-                              ${isSubActive ? 'text-third bg-third/5 font-bold' : 'text-gray-500 hover:text-third/80'}`}
+                            className={`text-sm py-2 px-2 rounded-sm transition-colors 
+                              ${isSubActive ? 'text-cyan-400 bg-cyan-500/10 font-semibold' : 'text-gray-500 hover:text-white'}`}
                           >
                             {sub.name}
                           </Link>
@@ -180,8 +167,8 @@ export default function SideBar() {
           </nav>
 
           {/* Bottom Action */}
-          <button className="mt-auto cursor-pointer bg-white text-[#020617] w-full py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-third hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-            <span className="text-xl">+</span> Add integration
+          <button className="mt-auto cursor-pointer bg-gradient-to-r from-purple-500 to-cyan-500 text-white w-full py-2.5 rounded-sm font-bold flex items-center justify-center gap-2 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] uppercase tracking-wider text-xs">
+            <span className="text-lg">+</span> Add integration
           </button>
         </div>
       </div>

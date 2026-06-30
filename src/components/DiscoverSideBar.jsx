@@ -1,6 +1,6 @@
 // src/components/DiscoverSideBar.jsx
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Search, Plus, Filter, FilePlus2 } from "lucide-react"; // تم استيراد FilePlus2 هنا لشكل الصورة
+import { ChevronDown, ChevronRight, Search, Plus, Filter, FilePlus2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TYPE_ICON_MAP = {
@@ -88,7 +88,7 @@ export default function DiscoverSideBar({ fields, onAddField }) {
     );
 
   return (
-    <aside className="w-56 min-w-[210px] border-r border-gray-700/60 flex flex-col h-full overflow-hidden">
+    <aside className="w-56 min-w-[210px] bg-[#0a0a0a] border-r border-gray-700/60 flex flex-col h-full overflow-hidden">
       {/* Field search */}
       <div className="p-2 border-b border-gray-700/60 flex items-center gap-1.5">
         <div className="flex-1 flex items-center gap-1.5 bg-gray-800 border border-gray-600/50 rounded px-2 py-1">
@@ -151,7 +151,7 @@ export default function DiscoverSideBar({ fields, onAddField }) {
         </CollapsibleSection>
       </div>
 
-      {/* منطقة الزر السفلي المصممة مثل الصورة الثانية تماماً */}
+      {/* Bottom action button */}
       <div className="p-2 border-t border-transparent w-full mt-auto">
         <button className="flex items-center justify-center gap-2.5 bg-transparent text-white font-semibold text-xs py-2 px-4 border border-gray-700/70 rounded-md w-full transition-all mb-[20px] hover:bg-gray-800/40 hover:border-gray-600">
           <FilePlus2 size={16} strokeWidth={1.8} className="text-gray-300" />
