@@ -1,9 +1,10 @@
 // src/components/DocumentTable.jsx
-import { useState } from "react";
-import { ChevronDown, ChevronRight, Pencil } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ChevronDown, ChevronRight, Pencil, X } from "lucide-react";
 
 function formatTimestamp(iso) {
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso ?? "");
   const pad = (n) => String(n).padStart(2, "0");
   const ms = String(d.getMilliseconds()).padStart(3, "0");
   return `Jan ${pad(d.getDate())}, ${d.getFullYear()} @ ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${ms}`;
@@ -16,11 +17,11 @@ function buildDocumentPreview(doc) {
     .join(" ");
 }
 
-function ExpandedDocRow({ doc }) {
+function ExpandedDocRow({ doc, colSpan }) {
   const entries = Object.entries(doc).filter(([k]) => k !== "id");
   return (
     <tr>
-      <td colSpan={3} className="bg-gray-800/50 px-4 py-3">
+      <td colSpan={colSpan} className="bg-gray-800/50 px-4 py-3">
         <table className="w-full text-xs">
           <tbody>
             {entries.map(([key, val]) => (
@@ -38,20 +39,51 @@ function ExpandedDocRow({ doc }) {
   );
 }
 
-export default function DocumentTable({ documents, columns, onSort }) {
+export default function DocumentTable({ documents, selectedFields = [], onRemoveField, onSort }) {
   const [expandedId, setExpandedId] = useState(null);
   const [sortField, setSortField] = useState("@timestamp");
   const [sortDir, setSortDir] = useState("desc");
 
+  const hasFieldColumns = selectedFields.length > 0;
+  const colSpan = 2 + 1 + (hasFieldColumns ? selectedFields.length : 1);
+
   const handleSort = (field) => {
-    if (field === sortField) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("asc");
-    }
-    onSort?.(field, sortDir);
+    const nextDir = field === sortField ? (sortDir === "asc" ? "desc" : "asc") : "asc";
+    setSortField(field);
+    setSortDir(nextDir);
+    onSort?.(field, nextDir);
   };
+
+  const sortedDocs = useMemo(() => {
+    const docs = [...documents];
+    docs.sort((a, b) => {
+      let av = a[sortField];
+      let bv = b[sortField];
+      if (sortField === "@timestamp") {
+        av = new Date(av).getTime();
+        bv = new Date(bv).getTime();
+      } else {
+        const an = parseFloat(av);
+        const bn = parseFloat(bv);
+        if (!isNaN(an) && !isNaN(bn)) {
+          av = an;
+          bv = bn;
+        } else {
+          av = String(av ?? "").toLowerCase();
+          bv = String(bv ?? "").toLowerCase();
+        }
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return docs;
+  }, [documents, sortField, sortDir]);
+
+  const SortArrow = ({ field }) =>
+    sortField === field ? (
+      <span className="text-blue-400">{sortDir === "asc" ? "↑" : "↓"}</span>
+    ) : null;
 
   return (
     <div className="flex-1 overflow-auto">
@@ -64,31 +96,43 @@ export default function DocumentTable({ documents, columns, onSort }) {
               className="text-left px-3 py-2 text-gray-400 font-medium cursor-pointer hover:text-white whitespace-nowrap"
               onClick={() => handleSort("@timestamp")}
             >
-              @timestamp{" "}
-              {sortField === "@timestamp" && (
-                <span className="text-blue-400">{sortDir === "asc" ? "↑" : "↓"}</span>
-              )}
+              @timestamp <SortArrow field="@timestamp" />
             </th>
-            <th className="text-left px-3 py-2 text-gray-400 font-medium">Document</th>
+            {hasFieldColumns ? (
+              selectedFields.map((field) => (
+                <th key={field} className="text-left px-3 py-2 text-gray-400 font-medium group">
+                  <span className="flex items-center gap-1">
+                    <span className="cursor-pointer hover:text-white" onClick={() => handleSort(field)}>
+                      {field} <SortArrow field={field} />
+                    </span>
+                    {onRemoveField && (
+                      <button
+                        onClick={() => onRemoveField(field)}
+                        className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove column"
+                      >
+                        <X size={11} />
+                      </button>
+                    )}
+                  </span>
+                </th>
+              ))
+            ) : (
+              <th className="text-left px-3 py-2 text-gray-400 font-medium">Document</th>
+            )}
           </tr>
         </thead>
         <tbody>
-          {documents.map((doc) => {
+          {sortedDocs.map((doc) => {
             const expanded = expandedId === doc.id;
             return (
               <>
-                <tr
-                  key={doc.id}
-                  className="border-b border-gray-700/30 hover:bg-gray-800/40 group"
-                >
+                <tr key={doc.id} className="border-b border-gray-700/30 hover:bg-gray-800/40 group">
                   <td className="px-2 py-2 text-gray-600 hover:text-blue-400 cursor-pointer">
                     <Pencil size={11} />
                   </td>
                   <td className="px-1 py-2">
-                    <input
-                      type="checkbox"
-                      className="accent-blue-500 cursor-pointer"
-                    />
+                    <input type="checkbox" className="accent-blue-500 cursor-pointer" />
                   </td>
                   <td
                     className="px-3 py-2 text-gray-400 font-mono whitespace-nowrap cursor-pointer hover:text-blue-300 align-top"
@@ -103,13 +147,19 @@ export default function DocumentTable({ documents, columns, onSort }) {
                       {formatTimestamp(doc["@timestamp"])}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-gray-400 font-mono leading-relaxed">
-                    <span className="line-clamp-2 text-[11px]">
-                      {buildDocumentPreview(doc)}
-                    </span>
-                  </td>
+                  {hasFieldColumns ? (
+                    selectedFields.map((field) => (
+                      <td key={field} className="px-3 py-2 text-gray-300 font-mono align-top break-all">
+                        {doc[field] !== undefined && doc[field] !== null ? String(doc[field]) : "-"}
+                      </td>
+                    ))
+                  ) : (
+                    <td className="px-3 py-2 text-gray-400 font-mono leading-relaxed">
+                      <span className="line-clamp-2 text-[11px]">{buildDocumentPreview(doc)}</span>
+                    </td>
+                  )}
                 </tr>
-                {expanded && <ExpandedDocRow key={`${doc.id}-exp`} doc={doc} />}
+                {expanded && <ExpandedDocRow key={`${doc.id}-exp`} doc={doc} colSpan={colSpan} />}
               </>
             );
           })}

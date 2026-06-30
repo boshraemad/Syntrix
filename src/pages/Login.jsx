@@ -1,97 +1,130 @@
-import React from 'react'
-import { Button } from '@/components/ui/button'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import useLogin from '@/features/Auth/hooks/useLogin'
 import { useForm } from 'react-hook-form'
+import AuthLayout from '@/components/AuthLayout'
+
 export default function Login() {
+  const [rememberMe, setRememberMe] = useState(false);
   const {
     register,
     formState: { errors },
     handleSubmit,
-  } = useForm({ mode: "onChange"})
-  const {isLoading , loginUser}=useLogin();
-  const onSubmit=(data)=>{
-    if(!data) return;
+  } = useForm({ mode: "onChange" })
+  const { isLogging, loginUser } = useLogin();
+
+  const onSubmit = (data) => {
+    if (!data) return;
     loginUser(data);
-    console.log(data);
   }
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden font-poppins">
-      
-      <div className="absolute -top-20 -left-20 w-[450px] h-[450px] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
- 
-      <img 
-        className='absolute -top-10 -right-10 w-64 md:w-96 opacity-80 pointer-events-none' 
-        src="/Top-puple.svg" 
-        alt="" 
-      />
+    <AuthLayout>
+      {/* Header */}
+      <div className="mb-12">
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-3xl font-semibold mb-2 text-white"
+        >
+          Welcome back
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-gray-500 text-sm"
+        >
+          Enter your credentials to access the SOC terminal.
+        </motion.p>
+      </div>
 
-
-      <img 
-        className='absolute -bottom-10 -left-10 w-64 md:w-96 opacity-80 pointer-events-none' 
-        src="/bottom-puple.svg" 
-        alt="" 
-      />
-
-
-      <div className="absolute top-1/4 -right-20 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md px-8 flex items-center flex-col z-10"
+      {/* Form */}
+      <motion.form
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.45 }}
+        className="space-y-8"
+        onSubmit={handleSubmit(onSubmit)}
       >
-          <motion.h1 
-            className='font-bold text-white text-7xl mb-12 tracking-tight'
+        {/* Email Input */}
+        <div className="space-y-2 group">
+          <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest transition-colors group-focus-within:text-white">
+            Email or Username
+          </label>
+          <input
+            {...register("email", { required: true })}
+            type="text"
+            placeholder="analyst@syntrix.local"
+            className="w-full bg-transparent border-b border-white/10 px-0 py-2 text-white focus:outline-none focus:border-white transition-all placeholder:text-gray-700"
+          />
+          {errors.email?.type === "required" && (
+            <p className="text-red-400 text-xs mt-1">Email is required</p>
+          )}
+        </div>
+
+        {/* Password Input */}
+        <div className="space-y-2 group">
+          <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest transition-colors group-focus-within:text-white">
+            Password
+          </label>
+          <input
+            {...register("password", { required: true })}
+            type="password"
+            placeholder="••••••••"
+            className="w-full bg-transparent border-b border-white/10 px-0 py-2 text-white focus:outline-none focus:border-white transition-all placeholder:text-gray-700"
+          />
+          {errors.password?.type === "required" && (
+            <p className="text-red-400 text-xs mt-1">Password is required</p>
+          )}
+        </div>
+
+        {/* Remember me + Forgot password */}
+        <div className="flex items-center justify-between pt-2">
+          <label
+            className="flex items-center gap-3 cursor-pointer group/check"
+            onClick={() => setRememberMe(!rememberMe)}
           >
-            Syntrix
-          </motion.h1>
-
-          <form className='w-full text-white flex flex-col gap-6' onSubmit={handleSubmit(onSubmit)}>
-            
-            {/* Username Input */}
-            <div className='flex flex-col gap-2'>
-              <label className='text-sm font-medium text-gray-300 ml-1'>Email</label>
-              <input
-                {...register("email", { required: true })}
-                type="text"
-                placeholder="........................"
-                className='px-4 py-3 bg-black/60 border-indigo-900/40 border rounded-xl outline-none focus:border-indigo-500 transition-all text-white placeholder-gray-500'
-              />
-              {errors.email?.type === "required" && (
-                 <p className='text-red-500 text-sm p-2'>email is required</p>
-               )}
+            <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${rememberMe ? 'border-white bg-white' : 'border-white/20 group-hover/check:border-white/50'}`}>
+              {rememberMe && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 4l2.5 2.5L9 1" />
+                </svg>
+              )}
             </div>
+            <span className="text-xs text-gray-400 group-hover/check:text-gray-200 transition-colors select-none">
+              Remember me
+            </span>
+          </label>
+          <Link
+            to="/forgot-password"
+            className="text-xs text-gray-400 hover:text-white transition-colors"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
-            {/* Password Input */}
-            <div className='flex flex-col gap-2 mb-2'>
-              <label className='text-sm font-medium text-gray-300 ml-1'>password</label>
-              <input 
-               {...register("password", { required: true })}
-                type="password" 
-                placeholder="*******"
-                className='px-4 py-3 bg-black/60 border-indigo-900/40 border rounded-xl outline-none focus:border-indigo-500 transition-all text-white placeholder-gray-500'
-              />
-                 {errors.password?.type === "required" && (
-                 <p className='text-red-500 text-sm p-2'>password is required</p>
-               )}
-            </div>
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isLogging}
+          className="w-full bg-white text-black font-bold py-4 rounded hover:bg-gray-200 transition-colors mt-8 text-sm uppercase tracking-wider cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLogging ? 'Authenticating...' : 'Authenticate'}
+        </button>
+      </motion.form>
 
-            {/* Login Button */}
-            <Button type="submit" className="w-full bg-[#1e1b4b] hover:bg-indigo-900 text-white py-7 rounded-2xl font-bold text-xl transition-all shadow-xl shadow-indigo-500/10">
-              Login
-            </Button>
-
-            <Link 
-              to="/forgot-password" 
-              className='text-gray-400 text-sm text-center hover:text-white transition-colors'
-            >
-              Forgot password ?
-            </Link>
-          </form>
+      {/* Footer */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        className="mt-12 text-center text-[10px] text-gray-600 font-mono tracking-widest uppercase"
+      >
+        Built for CCSED Graduation Project 2026
       </motion.div>
-    </div>
+    </AuthLayout>
   )
 }
