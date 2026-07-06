@@ -41,7 +41,6 @@
 /* 4. Light Mode colors (clean and very flat) */
 :root {
   --radius: 0.5rem;
-  /* Medium-sharp corners for a premium feel */
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(0, 0%, 5%);
   --card: hsl(0, 0%, 100%);
@@ -60,26 +59,24 @@
   --border: hsl(0, 0%, 90%);
   --input: hsl(0, 0%, 90%);
   --ring: hsl(0, 0%, 5%);
+  
+  /* متغيرات ألوان تنظيف الأشعة المضيئة للـ Light mode */
+  --beam-shadow-clear: #f8fafc;
 }
 
 /* 5. The core look: Premium Matte Black Dark Mode */
 .dark {
   --background: hsl(0, 0%, 2%);
-  /* Fully matte black */
   --foreground: hsl(0, 0%, 98%);
-  /* Crisp white for contrast */
 
   --card: hsl(0, 0%, 4%);
-  /* Card color very close to the background for a seamless blend */
   --card-foreground: hsl(0, 0%, 98%);
 
   --popover: hsl(0, 0%, 4%);
   --popover-foreground: hsl(0, 0%, 98%);
 
   --primary: hsl(0, 0%, 98%);
-  /* Primary buttons are bright white */
   --primary-foreground: hsl(0, 0%, 0%);
-  /* Text inside buttons is black */
 
   --secondary: hsl(0, 0%, 10%);
   --secondary-foreground: hsl(0, 0%, 98%);
@@ -93,9 +90,11 @@
   --destructive: hsl(0, 62%, 40%);
 
   --border: hsl(0, 0%, 10%);
-  /* Very subtle, barely visible borders */
   --input: hsl(0, 0%, 10%);
   --ring: hsl(0, 0%, 98%);
+  
+  /* متغيرات ألوان تنظيف الأشعة المضيئة للـ Dark mode */
+  --beam-shadow-clear: #000000;
 }
 
 @layer base {
@@ -106,12 +105,16 @@
   body {
     font-family: var(--font-sans);
     @apply bg-background text-foreground antialiased;
-    /* antialiased smooths the fonts */
   }
 }
 
 /* Premium Auth Pages — Watermark outlined text */
 .outline-text {
+  -webkit-text-stroke: 2px rgba(0, 0, 0, 0.07);
+  color: transparent;
+}
+
+.dark .outline-text {
   -webkit-text-stroke: 2px rgba(255, 255, 255, 0.07);
   color: transparent;
 }
@@ -126,12 +129,12 @@
 .tiptap-canvas h3 { font-size: 1.5rem; font-weight: 600; margin-top: 1.5em; margin-bottom: 0.5em; line-height: 1.4; }
 .tiptap-canvas h4 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5em; margin-bottom: 0.5em; line-height: 1.5; }
 
-.tiptap-canvas strong { font-weight: 700; color: #fff; }
+.tiptap-canvas strong { font-weight: 700; @apply text-foreground; }
 .tiptap-canvas em { font-style: italic; }
 .tiptap-canvas u { text-decoration: underline; }
 .tiptap-canvas s { text-decoration: line-through; color: #888; }
 
-/* Inline Code style (like Notion: dark gray background, pink/red text) */
+/* Inline Code style */
 .tiptap-canvas p code, .tiptap-canvas h1 code, .tiptap-canvas h2 code, .tiptap-canvas h3 code, .tiptap-canvas li code { 
   background-color: rgba(115, 115, 115, 0.2); 
   color: #eb5757; 
@@ -185,7 +188,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  padding-top: 0.25rem; /* align checkbox with text */
+  padding-top: 0.25rem;
 }
 .tiptap-canvas ul[data-type="taskList"] li > label input {
   appearance: none;
@@ -228,7 +231,6 @@
 .tiptap-canvas ul[data-type="taskList"] li > div {
   flex-grow: 1;
 }
-/* IMPORTANT: Remove margin from paragraphs inside task lists so they align perfectly with the checkbox */
 .tiptap-canvas ul[data-type="taskList"] li > div > p {
   margin: 0;
   line-height: 1.6;
@@ -242,4 +244,9 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: white !important;
   caret-color: white;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+/* الخدعة الجوهرية لإجبار المتصفح على عمل رندر لحظي متزامن لكل أجزاء الصفحة بدون تفكيك أو تأخير */
+*, *::before, *::after {
+  transition-duration: 75ms !important;
 }
