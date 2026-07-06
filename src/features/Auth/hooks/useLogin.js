@@ -13,6 +13,8 @@ export default function useLogin() {
         showSuccessToast("user logged in successfully");
         setAccessToken(data.token)
         localStorage.setItem("token" , data.token);
+        localStorage.setItem("refteshtoken",data.refeshToken);
+        console.log(data);
         navigate("/");
     },
     onError:(error)=>{

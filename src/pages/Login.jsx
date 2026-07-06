@@ -98,12 +98,6 @@ export default function Login() {
               Remember me
             </span>
           </label>
-          <Link
-            to="/sign-up"
-            className="text-xs text-gray-400 hover:text-white transition-colors"
-          >
-            Don't have an account yet?
-          </Link>
         </div>
 
         {/* Submit Button */}

@@ -5,7 +5,6 @@ import Discover from "@/pages/Discover";
 import HomePage from "@/pages/HomePage";
 import Layout from "@/pages/Layout";
 import Login from "@/pages/Login";
-import SignUp from "@/pages/SignUp";
 import Maps from "@/pages/Maps";
 import Canvas from "@/pages/Canvas";
 import MachineLearning from "@/pages/MachineLearning";
@@ -25,10 +24,6 @@ const router = createBrowserRouter([
     {
         path:"login",
         element:<Login/>
-    },
-    {
-        path:"sign-up",
-        element:<SignUp/>
     },
     {
         path:"/",

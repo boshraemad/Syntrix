@@ -10,7 +10,7 @@ export const useRefreshToken = () => {
         const data = await refreshToken();
         
         // 1. Safely attach the fresh token to your Axios instance header
-        const token = data.accessToken || data.token; // adjust based on your API response structure
+        const token =data.token; // adjust based on your API response structure
         if (token) {
           axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           localStorage.setItem("token" , data.token);
