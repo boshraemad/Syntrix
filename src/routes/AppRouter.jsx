@@ -5,6 +5,7 @@ import Discover from "@/pages/Discover";
 import HomePage from "@/pages/HomePage";
 import Layout from "@/pages/Layout";
 import Login from "@/pages/Login";
+import SignUp from "@/pages/SignUp";
 import Maps from "@/pages/Maps";
 import Canvas from "@/pages/Canvas";
 import MachineLearning from "@/pages/MachineLearning";
@@ -19,14 +20,15 @@ import Detection from "@/pages/Detection";
 import SecurityAlerts from "@/pages/SecurityAlerts";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import RootErrorBoundary from "./RootErrorBoundary";
-import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
-import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import Authenticator from "@/pages/Authenticator";
 const router = createBrowserRouter([
     {
         path:"login",
         element:<Login/>
+    },
+    {
+        path:"sign-up",
+        element:<SignUp/>
     },
     {
         path:"/",
@@ -51,20 +53,6 @@ const router = createBrowserRouter([
             {path:"security/alerts", element:<SecurityAlerts/>},
             {path:"security/alerts/:alertId", element:<AlertDetail/>}
         ]
-    },
-    {
-        path:"/forgot-password",
-        element:<ForgotPasswordPage/>
-    }
-    ,
-    {
-        path:"/reset-password",
-        element:<ResetPasswordPage/>
-    }
-    ,
-    {
-        path:"/verify-email",
-        element:<VerifyEmailPage/>
     }
 ]);
 
