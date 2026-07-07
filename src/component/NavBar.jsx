@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { logout , logoutAll } from '@/services/auth.services'
 import { FaBars } from "react-icons/fa";
 import ThemeToggle from '@/components/ToggleButton'
+
 export default function NavBar({ onToggleSidebar }) {
   const savedTheme = localStorage.getItem('theme');
   const clickLogout = async () => {
@@ -18,10 +19,10 @@ export default function NavBar({ onToggleSidebar }) {
     }
   };
   return (
-    <div className="bg-background border-b border-[#dadada]/5 h-14 flex justify-between items-center px-4 py-2">
+    <div className="bg-background border-b border-slate-200 dark:border-[#dadada]/5 h-14 flex justify-between items-center px-4 py-2">
         <div className='flex items-center gap-4'>
           <FaBars 
-            className={`text-lg cursor-pointer ${savedTheme === 'light' ? 'text-black' : 'text-light'} hover:text-cyan-400 transition-colors`} 
+            className={`text-lg cursor-pointer ${savedTheme === 'light' ? 'text-black' : 'text-light dark:text-light'} hover:text-cyan-400 transition-colors`} 
             onClick={onToggleSidebar} 
           />
           <Logo/>
@@ -29,10 +30,9 @@ export default function NavBar({ onToggleSidebar }) {
         <SearchBar/>
         <div className='flex items-center gap-4'>
         <ThemeToggle/>
-        <Link to="/login"><button onClick={clickLogout} className='px-4 py-1.5 border border-purple-500/20 text-gray-300 hover:bg-purple-500/20 hover:text-white hover:border-purple-500/50 transition-colors cursor-pointer rounded-sm text-xs uppercase tracking-wider font-semibold'>Logout</button></Link>
+        <Link to="/login"><button onClick={clickLogout} className='px-4 py-1.5 border border-purple-500/20 text-slate-700 dark:text-gray-300 hover:bg-purple-500/20 hover:text-white dark:hover:text-white hover:border-purple-500/50 transition-colors cursor-pointer rounded-sm text-xs uppercase tracking-wider font-semibold'>Logout</button></Link>
         <User/>
         </div>
     </div>
   )
 }
-
