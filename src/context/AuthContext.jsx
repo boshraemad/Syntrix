@@ -7,7 +7,6 @@ export default function AuthProvider({children}) {
 
     const logout=()=>{
       setAccessToken(null);
-      localStorage.clear();
     }
   return (
     <AuthContext.Provider value={{accessToken , setAccessToken , logout}}>

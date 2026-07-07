@@ -1,22 +1,22 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import useLogin from '@/features/Auth/hooks/useLogin'
+import useSignUp from '@/features/Auth/hooks/useSignUp'
 import { useForm } from 'react-hook-form'
 import AuthLayout from '@/components/AuthLayout'
 
-export default function Login() {
-  const [rememberMe, setRememberMe] = useState(false);
+export default function SignUp() {
   const {
     register,
     formState: { errors },
     handleSubmit,
   } = useForm({ mode: "onChange" })
-  const { isLogging, loginUser } = useLogin();
+  const { isLogging, signUpUser } = useSignUp();
 
   const onSubmit = (data) => {
     if (!data) return;
-    loginUser(data);
+    console.log(data);
+    signUpUser(data);
   }
 
   return (
@@ -29,7 +29,7 @@ export default function Login() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-3xl font-semibold mb-2 text-white"
         >
-          Welcome back
+          Welcome
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -80,29 +80,33 @@ export default function Login() {
             <p className="text-red-400 text-xs mt-1">Password is required</p>
           )}
         </div>
+        {/* confirm Password Input */}
+        <div className="space-y-2 group">
+  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest transition-colors group-focus-within:text-white">
+    Confirm Password
+  </label>
+  <input
+    {...register("confirmPassword", { 
+      required: "Confirm Password is required",
+      validate: (value, formValues) => value === formValues.password || "Passwords do not match"
+    })}
+    type="password"
+    placeholder="••••••••"
+    className="w-full bg-transparent border-b border-white/10 px-0 py-2 text-white focus:outline-none focus:border-white transition-all placeholder:text-gray-700"
+  />
+  {errors.confirmPassword && (
+    <p className="text-red-400 text-xs mt-1">{errors.confirmPassword.message}</p>
+  )}
+</div>
 
-        {/* Remember me + Forgot password */}
-        <div className="flex items-center justify-between pt-2">
-          <label
-            className="flex items-center gap-3 cursor-pointer group/check"
-            onClick={() => setRememberMe(!rememberMe)}
-          >
-            <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${rememberMe ? 'border-white bg-white' : 'border-white/20 group-hover/check:border-white/50'}`}>
-              {rememberMe && (
-                <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 4l2.5 2.5L9 1" />
-                </svg>
-              )}
-            </div>
-            <span className="text-xs text-gray-400 group-hover/check:text-gray-200 transition-colors select-none">
-              Remember me
-            </span>
-          </label>
+
+        <div className="flex items-center justify-end pt-2">
+
           <Link
-            to="/sign-up"
+            to="/login"
             className="text-xs text-gray-400 hover:text-white transition-colors"
           >
-            Don't have an account yet?
+            Already have an account?
           </Link>
         </div>
 
@@ -123,7 +127,6 @@ export default function Login() {
         transition={{ duration: 0.5, delay: 0.6 }}
         className="mt-12 text-center text-[10px] text-gray-600 font-mono tracking-widest uppercase"
       >
-
       </motion.div>
     </AuthLayout>
   )

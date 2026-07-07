@@ -11,7 +11,7 @@ export default function useLogin() {
     mutationFn:(data)=>login(data),
     onSuccess:(data)=>{
         showSuccessToast("user logged in successfully");
-        setAccessToken(data.data.token)
+        setAccessToken(data.token)
         localStorage.setItem("token" , data.token);
         navigate("/");
     },
