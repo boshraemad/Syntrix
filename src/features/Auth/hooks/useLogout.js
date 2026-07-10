@@ -15,6 +15,7 @@ export function useLogout() {
             showSuccessToast("Logged out successfully");
             setAccessToken(null);
             localStorage.removeItem("token");
+            localStorage.removeItem("user-data");
             queryClient.clear(); // مسح كاش الـ React Query
             navigate("/login");
         },

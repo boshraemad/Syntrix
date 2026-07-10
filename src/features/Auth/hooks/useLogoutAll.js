@@ -15,6 +15,7 @@ export function useLogoutAll() {
             showSuccessToast("Logged out from all devices successfully");
             setAccessToken(null);
             localStorage.removeItem("token");
+            localStorage.removeItem("user-data");
             queryClient.clear();
             navigate("/login");
         },
