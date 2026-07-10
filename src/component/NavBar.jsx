@@ -1,7 +1,6 @@
 import React from 'react'
 import Logo from './Logo'
 import User from './User'
-import SearchBar from './SearchBar'
 import { Link } from 'react-router-dom'
 import { logout , logoutAll } from '@/services/auth.services'
 import { FaBars } from "react-icons/fa";
@@ -27,9 +26,8 @@ export default function NavBar({ onToggleSidebar }) {
           />
           <Logo/>
         </div>
-        <SearchBar/>
+
         <div className='flex items-center gap-4'>
-        <ThemeToggle/>
         <Link to="/login"><button onClick={clickLogout} className='px-4 py-1.5 border border-purple-500/20 text-slate-700 dark:text-gray-300 hover:bg-purple-500/20 hover:text-white dark:hover:text-white hover:border-purple-500/50 transition-colors cursor-pointer rounded-sm text-xs uppercase tracking-wider font-semibold'>Logout</button></Link>
         <User/>
         </div>

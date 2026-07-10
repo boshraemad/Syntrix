@@ -20,6 +20,7 @@ import SecurityAlerts from "@/pages/SecurityAlerts";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import RootErrorBoundary from "./RootErrorBoundary";
 import Authenticator from "@/pages/Authenticator";
+import Settings from "@/pages/Settings";
 const router = createBrowserRouter([
     {
         path:"login",
@@ -46,7 +47,8 @@ const router = createBrowserRouter([
             {path:"security", element:<SecurityHub/>},
             {path:"security/detection", element:<Detection/>},
             {path:"security/alerts", element:<SecurityAlerts/>},
-            {path:"security/alerts/:alertId", element:<AlertDetail/>}
+            {path:"security/alerts/:alertId", element:<AlertDetail/>},
+            {path:"setting", element:<Settings/>}
         ]
     }
 ]);

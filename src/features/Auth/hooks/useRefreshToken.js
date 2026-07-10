@@ -28,7 +28,7 @@ export const useRefreshToken = () => {
       }
     },
     
-    // Refresh every 28 minutes (1,680,000 ms) to give a 2-minute buffer before a 30-min expiry
+    // Refresh every 14 minutes (1,680,000 ms) to give a 2-minute buffer before a 30-min expiry
     refetchInterval: 840000, 
     
     // Keeps the timer ticking even if the browser window is in the background
