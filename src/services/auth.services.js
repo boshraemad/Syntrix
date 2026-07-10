@@ -29,3 +29,9 @@ export async function getActiveSessions(){
     });
     return res.data.data;
 }
+
+export async function signup(data) {
+    const res = await axiosInstance.post("/auth/signup", data);
+    return res.data;
+}
+
