@@ -1,20 +1,24 @@
-import axiosInstance  from "@/config/axiosInstance";
+import axiosInstance from "@/config/axiosInstance";
 
-export async function login(data){
-        const res = await axiosInstance.post("/auth/login" , data);
-        return res.data;
-}
-export async function logout(){
-    const res = await axiosInstance.post("/auth/logout");
+export async function login(data) {
+    const res = await axiosInstance.post("/auth/login", data);
     return res.data;
 }
 
-export async function logoutAll(){
-    const res = await axiosInstance.post("/auth/logout-all");
+export async function logout() {
+    // تم تمرير كائن فارغ كأرجومنت ثانٍ ليتم إرسال الـ Headers بشكل صحيح
+    const res = await axiosInstance.post("/auth/logout", {});
     return res.data;
 }
-export async function refreshToken(){
-    const res = await axiosInstance.post("/auth/refresh" , {} , {
+
+export async function logoutAll() {
+    // تم تمرير كائن فارغ كأرجومنت ثانٍ ليتم إرسال الـ Headers بشكل صحيح
+    const res = await axiosInstance.post("/auth/logout-all", {});
+    return res.data;
+}
+
+export async function refreshToken() {
+    const res = await axiosInstance.post("/auth/refresh", {}, {
         withCredentials: true 
     });
     return res.data;
