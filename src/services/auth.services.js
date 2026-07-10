@@ -23,8 +23,9 @@ export async function refreshToken() {
     });
     return res.data;
 }
-
-export async function activeSessions() {
-    const res = await axiosInstance.get("/auth/sessions");
-    return res.data;
+export async function getActiveSessions(){
+    const res = await axiosInstance.get("/auth/sessions",{},{
+        withCredentials: true 
+    });
+    return res.data.data;
 }

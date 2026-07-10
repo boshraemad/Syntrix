@@ -1,45 +1,30 @@
-import ThemeToggle from "@/components/ToggleButton";
 import { useState } from "react";
+import { useActiveSessions } from "@/features/Auth/hooks/useActiveSessions";
 
+// Lightweight User-Agent parser — no external dependency.
+function parseUserAgent(ua = "") {
+  let os = "Unknown OS";
+  if (/windows/i.test(ua)) os = "Windows";
+  else if (/iphone|ipad/i.test(ua)) os = "iOS";
+  else if (/android/i.test(ua)) os = "Android";
+  else if (/mac os x/i.test(ua)) os = "macOS";
+  else if (/linux/i.test(ua)) os = "Linux";
 
-const SESSIONS = [
-  {
-    id: "sess_01",
-    device: "Current Device",
-    detail: "Windows 11 / Chrome 126",
-    location: "Cairo, Egypt",
-    ip: "197.45.12.88",
-    lastActive: "Active now",
-    current: true,
-  },
-  {
-    id: "sess_02",
-    device: "Linux Server",
-    detail: "Ubuntu 22.04 / SSH Client",
-    location: "Cairo, Egypt",
-    ip: "156.202.4.19",
-    lastActive: "12 minutes ago",
-    current: false,
-  },
-  {
-    id: "sess_03",
-    device: "MacBook Pro",
-    detail: "macOS Sonoma / Safari 17",
-    location: "Alexandria, Egypt",
-    ip: "154.178.90.3",
-    lastActive: "3 hours ago",
-    current: false,
-  },
-  {
-    id: "sess_04",
-    device: "Mobile Device",
-    detail: "Android 14 / Chrome Mobile",
-    location: "Mansoura, Egypt",
-    ip: "41.235.14.201",
-    lastActive: "1 day ago",
-    current: false,
-  },
-];
+  let browser = "Unknown Browser";
+  if (/edg\//i.test(ua)) browser = "Edge";
+  else if (/chrome\//i.test(ua)) browser = "Chrome";
+  else if (/version\/.*safari/i.test(ua)) browser = "Safari";
+  else if (/firefox\//i.test(ua)) browser = "Firefox";
+
+  return { os, browser };
+}
+
+function formatDateTime(iso) {
+  return new Date(iso).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
 
 const TABS = [
   { id: "profile", label: "Profile" },
@@ -47,7 +32,9 @@ const TABS = [
   { id: "sessions", label: "Active Sessions" },
 ];
 
-
+// ---------------------------------------------------------------------------
+// Shared atoms
+// ---------------------------------------------------------------------------
 function SectionCard({ title, description, children }) {
   return (
     <div className="rounded-lg border border-white/5 bg-white/[0.02]">
@@ -114,11 +101,30 @@ function StatusPill({ children, tone = "cyan" }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Profile section
+// ---------------------------------------------------------------------------
 function ProfileSection() {
-  const [form, setForm] = useState({
-    name: "Ahmed Bakr",
-    email: "ahmed.bakr@sentinel-sec.io",
-    role: "Security Analyst II",
+  const [form, setForm] = useState(() => {
+    try {
+      // قراءة الـ string من الـ localStorage وتحويله لـ Object
+      const savedUser = localStorage.getItem("user-data");
+      const user = savedUser ? JSON.parse(savedUser) : null;
+
+      // لو الـ user موجود، حولي شكل الداتا فوراً، لو مش موجود حطي القيم الافتراضية
+      return user ? {
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        email: user.email || '',
+        role: user.role || ''
+      } : {
+        name: "Ahmed Bakr",
+        email: "ahmed.bakr@sentinel-sec.io",
+        role: "Security Analyst II",
+      };
+    } catch (error) {
+      console.error("Error parsing user context:", error);
+      return { name: "", email: "", role: "" };
+    }
   });
   const [status, setStatus] = useState("idle"); // idle | saving | saved
 
@@ -189,6 +195,9 @@ function ProfileSection() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Password section
+// ---------------------------------------------------------------------------
 function PasswordSection() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -246,9 +255,11 @@ function PasswordSection() {
   );
 }
 
-
-function SessionsSection() {
-  const sessions = SESSIONS;
+// ---------------------------------------------------------------------------
+// Active sessions section
+// ---------------------------------------------------------------------------
+function SessionsSection({data}) {
+  const sessions = data;
 
   return (
     <SectionCard
@@ -260,35 +271,44 @@ function SessionsSection() {
           <thead>
             <tr className="border-b border-white/5 bg-white/[0.02] text-[11px] uppercase tracking-wide text-slate-500">
               <th className="px-4 py-2.5 font-medium">Device</th>
-              <th className="px-4 py-2.5 font-medium">Location</th>
               <th className="px-4 py-2.5 font-medium">IP Address</th>
-              <th className="px-4 py-2.5 font-medium">Last Active</th>
+              <th className="px-4 py-2.5 font-medium">Created</th>
+              <th className="px-4 py-2.5 font-medium">Expires</th>
             </tr>
           </thead>
           <tbody>
-            {sessions.map((sess) => (
-              <tr
-                key={sess.id}
-                className="border-b border-white/5 last:border-0 hover:bg-white/[0.015]"
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-200">{sess.device}</span>
-                    {sess.current && <StatusPill tone="cyan">This device</StatusPill>}
-                  </div>
-                  <div className="text-xs text-slate-500">{sess.detail}</div>
-                </td>
-                <td className="px-4 py-3 text-slate-400">{sess.location}</td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">{sess.ip}</td>
-                <td className="px-4 py-3 text-slate-400">
-                  {sess.current ? (
-                    <StatusPill tone="green">{sess.lastActive}</StatusPill>
-                  ) : (
-                    sess.lastActive
-                  )}
-                </td>
-              </tr>
-            ))}
+            {sessions.map((sess) => {
+              const { os, browser } = parseUserAgent(sess.userAgent);
+              const isCurrent = sess.id == JSON.parse(localStorage.getItem("user-data")).id;
+              console.log(isCurrent)
+              return (
+                <tr
+                  key={sess.id}
+                  className="border-b border-white/5 last:border-0 hover:bg-white/[0.015]"
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-200">
+                        {os} · {browser}
+                      </span>
+                      {isCurrent && <StatusPill tone="cyan">This device</StatusPill>}
+                    </div>
+                    <div className="mt-0.5 max-w-xs truncate text-xs text-slate-600" title={sess.userAgent}>
+                      {sess.id}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                    {sess.ipAddress}
+                  </td>
+                  <td className="px-4 py-3 text-slate-400">
+                    {formatDateTime(sess.createdAt)}
+                  </td>
+                  <td className="px-4 py-3 text-slate-400">
+                    {formatDateTime(sess.expiresAt)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -296,20 +316,20 @@ function SessionsSection() {
   );
 }
 
-
+// ---------------------------------------------------------------------------
+// Root component
+// ---------------------------------------------------------------------------
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("profile");
-
+  const { data, isLoading, error } = useActiveSessions();
+  console.log(data);
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-6">
-         <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-widest text-slate-500">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500">
             Account
-            </p>
-            <ThemeToggle/>
-         </div>
+          </p>
           <h1 className="mt-1 text-xl font-semibold text-white">Settings</h1>
           <p className="mt-1 text-sm text-slate-500">
             Manage your profile, security, and workspace preferences.
@@ -339,7 +359,7 @@ export default function Settings() {
         <div className="space-y-6">
           {activeTab === "profile" && <ProfileSection />}
           {activeTab === "password" && <PasswordSection />}
-          {activeTab === "sessions" && <SessionsSection />}
+          {activeTab === "sessions" && <SessionsSection data={data} />}
         </div>
       </div>
     </div>
