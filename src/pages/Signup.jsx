@@ -51,7 +51,7 @@ export default function Signup() {
       >
         {/* Row for First Name & Last Name */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* First Name Input */}
+         
           <div className="space-y-2 group">
             <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest transition-colors group-focus-within:text-white">
               First Name
@@ -174,5 +174,6 @@ export default function Signup() {
         SECURE GATEWAY // SYNTRIX_SYSTEM
       </motion.div>
     </AuthLayout>
+    
   )
 }
