@@ -13,10 +13,11 @@ export default function useLogin() {
         showSuccessToast("user logged in successfully");
         setAccessToken(data.token)
         localStorage.setItem("token" , data.token);
-        console.log(data);
+        localStorage.setItem("user-data" , JSON.stringify(data.data));
         navigate("/");
     },
     onError:(error)=>{
+        console.log(error)
         showErrorToast( error?.error.message || "Login failed. Please try again." );
     }
   })

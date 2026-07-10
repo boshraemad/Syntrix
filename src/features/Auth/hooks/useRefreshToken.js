@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { refreshToken } from "@/services/auth.services.js";
 import axiosInstance from "@/config/axiosInstance";
-
+import { showErrorToast } from "@/utils/toast";
 export const useRefreshToken = () => {
   return useQuery({
     queryKey: ["refreshToken"],
@@ -22,6 +22,7 @@ export const useRefreshToken = () => {
         return data;
       } catch (error) {
         // If the refresh token is expired or invalid, handle force logout here
+        showErrorToast("User is not logged in or session expired.")
         console.error("Session expired. Logging out...", error);
         // useAuthStore.getState().logout();
         throw error;
