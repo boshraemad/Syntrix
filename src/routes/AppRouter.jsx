@@ -1,3 +1,4 @@
+import { useSystemStatus } from "@/features/System/hooks/useGetSystemStatus";
 import Analytics from "@/pages/Analytics";
 import Dashboards from "@/pages/Dashboards";
 import DashboardDetail from "@/pages/DashboardDetail";
@@ -21,10 +22,41 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import RootErrorBoundary from "./RootErrorBoundary";
 import Authenticator from "@/pages/Authenticator";
 import Settings from "@/pages/Settings";
+
+function AuthPageLayout() {
+    const { data, isLoading, error } = useSystemStatus();
+
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-[#07090e] flex items-center justify-center">
+          <div className="text-sm font-mono text-cyan-400 animate-pulse uppercase tracking-wider">
+            Initializing Terminal Environment...
+          </div>
+        </div>
+      );
+    }
+  
+    // في حالة حدوث خطأ في الاتصال بالـ API
+    if (error) {
+      return (
+        <div className="min-h-screen bg-[#07090e] flex items-center justify-center p-4">
+          <div className="border border-red-500/20 bg-red-500/5 text-red-400 p-4 font-mono text-xs rounded-sm max-w-md">
+            <p className="font-bold uppercase mb-1">CRITICAL: Environment Sync Fault</p>
+            <p className="text-gray-400">Could not pull system status parameters. Ensure your backend is live.</p>
+          </div>
+        </div>
+      );
+    }
+  
+    const isFirstRun = data?.isFirstRun || data?.initialized === false;
+
+    return isFirstRun ? <Signup /> : <Login />;
+  }
+
 const router = createBrowserRouter([
     {
         path:"login",
-        element:<Login/>
+        element:<AuthPageLayout/>
     },
     {
         path:"/",
