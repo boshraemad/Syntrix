@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Search, Plus, ChevronDown, Pencil, X, Upload, FileCheck } from 'lucide-react';
 import { HOSTS, addHost } from '@/utils/hostsMockData';
 import { showSuccessToast } from '@/utils/toast';
+import { useGetDevices } from '@/features/devices/hooks/getDevices';
 
 function AddHostModal({ onClose, onAdded }) {
   const {
@@ -192,7 +193,8 @@ export default function Hosts() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [refresh, setRefresh] = useState(0);
-
+  const { data, isLoading, isError, error, isFetching } = useGetDevices();
+  console.log(data);
   const rows = useMemo(
     () =>
       HOSTS.map((h) => ({

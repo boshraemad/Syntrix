@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useActiveSessions } from "@/features/Auth/hooks/useActiveSessions";
-
+import ThemeToggle from "@/components/ToggleButton";
 // Lightweight User-Agent parser — no external dependency.
 function parseUserAgent(ua = "") {
   let os = "Unknown OS";
@@ -327,9 +327,12 @@ export default function Settings() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-6">
+          <div className="flex items-center justify-between">
           <p className="text-[11px] uppercase tracking-widest text-slate-500">
             Account
           </p>
+          <ThemeToggle/>
+          </div>
           <h1 className="mt-1 text-xl font-semibold text-white">Settings</h1>
           <p className="mt-1 text-sm text-slate-500">
             Manage your profile, security, and workspace preferences.

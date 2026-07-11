@@ -6,6 +6,7 @@ import Discover from "@/pages/Discover";
 import HomePage from "@/pages/HomePage";
 import Layout from "@/pages/Layout";
 import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
 import Maps from "@/pages/Maps";
 import Canvas from "@/pages/Canvas";
 import MachineLearning from "@/pages/MachineLearning";
