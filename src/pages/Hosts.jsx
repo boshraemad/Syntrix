@@ -2,21 +2,24 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Search, Plus, ChevronDown, Pencil, X, Upload, FileCheck } from 'lucide-react';
-import { HOSTS, addHost } from '@/utils/hostsMockData';
+import { HOSTS } from '@/utils/hostsMockData'; 
 import { showSuccessToast } from '@/utils/toast';
 import { useGetDevices } from '@/features/devices/hooks/getDevices';
+import { useCreateDevice } from '../features/devices/hooks/createDevices'; 
 
-function AddHostModal({ onClose, onAdded }) {
+function AddHostModal({ onClose }) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({ defaultValues: { type: 'server', criticality: 'medium' } });
 
   const fileRef = useRef(null);
   const [jsonData, setJsonData] = useState(null);
   const [jsonFileName, setJsonFileName] = useState('');
   const [jsonError, setJsonError] = useState('');
+
+  const { mutate: handleAddHost, isPending: isSubmitting } = useCreateDevice();
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -49,15 +52,18 @@ function AddHostModal({ onClose, onAdded }) {
   };
 
   const onSubmit = (data) => {
-    const host = addHost({
-      name: data.name.trim(),
-      description: data.description?.trim() || '',
-      ip: data.ip?.trim() || '',
-      type: data.type,
-      criticality: data.criticality,
-      details: jsonData,
+    // 🌟 تجميع الداتا بناءً على مواصفات الـ Backend في الـ Swagger
+    const finalData = {
+      hostName: data.name.trim(),
+      ip: data.ip?.trim() || "",
+    };
+
+    handleAddHost(finalData, {
+      onSuccess: () => {
+        showSuccessToast(`Host "${data.name.trim()}" added`);
+        onClose();
+      },
     });
-    onAdded(host);
   };
 
   const inputClass =
@@ -100,6 +106,7 @@ function AddHostModal({ onClose, onAdded }) {
             <label className={labelClass}>IP address</label>
             <input
               {...register('ip', {
+                required: 'IP address is required',
                 validate: (v) =>
                   !v ||
                   /^(\d{1,3}\.){3}\d{1,3}$/.test(v.trim()) ||
@@ -192,19 +199,28 @@ function AddHostModal({ onClose, onAdded }) {
 export default function Hosts() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
-  const [refresh, setRefresh] = useState(0);
-  const { data, isLoading, isError, error, isFetching } = useGetDevices();
-  console.log(data);
-  const rows = useMemo(
-    () =>
-      HOSTS.map((h) => ({
+
+  const { data: devicesData, isLoading, isError } = useGetDevices();
+
+  const rows = useMemo(() => {
+    const list = devicesData?.data || devicesData || [];
+    
+    if (list.length === 0 && !isLoading && !isError) {
+      return HOSTS.map((h) => ({
         id: h.id,
         title: h.host.name,
         desc: h.meta.description,
         tags: h.meta.tags,
-      })),
-    [refresh],
-  );
+      }));
+    }
+
+    return list.map((item) => ({
+      id: item.id || item._id,
+      title: item.hostName || item.title || item.name || 'Unknown Host',
+      desc: item.desc || item.description || 'No description provided.',
+      tags: item.tags || [],
+    }));
+  }, [devicesData, isLoading, isError]);
 
   const filteredHosts = rows.filter(
     (d) =>
@@ -212,15 +228,8 @@ export default function Hosts() {
       d.desc.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleAdded = (host) => {
-    setShowAdd(false);
-    setRefresh((r) => r + 1);
-    showSuccessToast(`Host "${host.host.name}" added`);
-  };
-
   return (
     <div className="pt-6 pb-8 px-4 text-white flex-1 h-full font-sans w-full flex flex-col">
-      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 mb-6 gap-4 border-b border-white/5">
         <h1 className="text-3xl font-bold tracking-tight text-white">Hosts</h1>
         <button
@@ -232,7 +241,6 @@ export default function Hosts() {
         </button>
       </div>
 
-      {/* Controls: Search and Tags */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="flex-1 flex items-center bg-[#0a0a0a] border border-purple-500/20 rounded-md px-3 py-2.5 focus-within:border-cyan-400/50 transition-colors shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
           <Search size={18} className="text-gray-500 mr-2" />
@@ -249,7 +257,6 @@ export default function Hosts() {
         </button>
       </div>
 
-      {/* Data Table */}
       <div className="flex-1 bg-transparent mt-2 overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse min-w-[800px]">
           <thead>
@@ -264,45 +271,55 @@ export default function Hosts() {
             </tr>
           </thead>
           <tbody>
-            {filteredHosts.map((doc) => (
-              <tr
-                key={doc.id}
-                className="border-b border-white/5 hover:bg-purple-500/5 hover:border-purple-500/20 transition-colors group"
-              >
-                <td className="py-3 px-2 text-center align-middle">
-                  <input type="checkbox" className="accent-purple-500 cursor-pointer w-3.5 h-3.5" />
-                </td>
-                <td className="py-3 px-4 font-medium">
-                  <Link
-                    to={`/observability/hosts/${doc.id}`}
-                    className="text-blue-400 hover:text-cyan-400 hover:underline transition-colors"
-                  >
-                    {doc.title}
-                  </Link>
-                </td>
-                <td className="py-3 px-4 text-gray-400">
-                  {doc.desc}
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {doc.tags?.map((t) => (
-                      <span
-                        key={t}
-                        className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] px-2 py-0.5 rounded-sm font-mono"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="py-3 px-4 text-right align-middle">
-                  <button className="text-gray-500 hover:text-cyan-400 transition-colors p-1 rounded-sm opacity-0 group-hover:opacity-100 cursor-pointer">
-                    <Pencil size={14} />
-                  </button>
-                </td>
+            {isLoading ? (
+              <tr>
+                <td colSpan="5" className="py-8 text-center text-xs font-mono text-cyan-400">Loading hosts...</td>
               </tr>
-            ))}
-            {filteredHosts.length === 0 && (
+            ) : isError ? (
+              <tr>
+                <td colSpan="5" className="py-8 text-center text-xs font-mono text-red-400">Failed to fetch data from API.</td>
+              </tr>
+            ) : (
+              filteredHosts.map((doc) => (
+                <tr
+                  key={doc.id}
+                  className="border-b border-white/5 hover:bg-purple-500/5 hover:border-purple-500/20 transition-colors group"
+                >
+                  <td className="py-3 px-2 text-center align-middle">
+                    <input type="checkbox" className="accent-purple-500 cursor-pointer w-3.5 h-3.5" />
+                  </td>
+                  <td className="py-3 px-4 font-medium">
+                    <Link
+                      to={`/observability/hosts/${doc.id}`}
+                      className="text-blue-400 hover:text-cyan-400 hover:underline transition-colors"
+                    >
+                      {doc.title}
+                    </Link>
+                  </td>
+                  <td className="py-3 px-4 text-gray-400">
+                    {doc.desc}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex flex-wrap gap-1.5">
+                      {doc.tags?.map((t) => (
+                        <span
+                          key={t}
+                          className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] px-2 py-0.5 rounded-sm font-mono"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-right align-middle">
+                    <button className="text-gray-500 hover:text-cyan-400 transition-colors p-1 rounded-sm opacity-0 group-hover:opacity-100 cursor-pointer">
+                      <Pencil size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+            {!isLoading && filteredHosts.length === 0 && (
               <tr>
                 <td colSpan="5" className="py-8 text-center text-gray-500">
                   No hosts found matching your search.
@@ -313,7 +330,7 @@ export default function Hosts() {
         </table>
       </div>
 
-      {showAdd && <AddHostModal onClose={() => setShowAdd(false)} onAdded={handleAdded} />}
+      {showAdd && <AddHostModal onClose={() => setShowAdd(false)} />}
     </div>
   );
 }
