@@ -10,3 +10,20 @@ export const getDevices = async (params) => {
     });
     return res.data;
   };
+
+  export const getDeviceById = async (id, includeServices = true, includeAlerts = true) => {
+
+    const res = await axiosInstance.get(`/devices/${id}`, {
+      params: {
+        includeServices,
+        includeAlerts,
+      },
+    });
+    return res.data;
+  };
+
+
+export const deleteDevice = async (id) => {
+  const res = await axiosInstance.delete(`/devices/${id}`);
+  return res.data;
+};
