@@ -144,15 +144,6 @@ export default function Signup() {
           )}
         </div>
 
-        {/* Link to Login */}
-        <div className="flex items-center justify-end pt-2">
-          <Link 
-            to="/login" 
-            className="text-xs text-gray-400 hover:text-white transition-colors select-none font-medium"
-          >
-            Already have an account? Sign In
-          </Link>
-        </div>
 
         {/* Submit Button */}
         <button
