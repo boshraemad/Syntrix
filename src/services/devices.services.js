@@ -10,6 +10,10 @@ export const getDevices = async (params) => {
     });
     return res.data;
   };
+  export const createDevice = async (deviceData) => {
+    const res = await axiosInstance.post('/devices', deviceData);
+    return res.data;
+  };
 
   export const getDeviceById = async (id, includeServices = true, includeAlerts = true) => {
 
