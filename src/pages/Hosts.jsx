@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Search, Plus, ChevronDown, Pencil, X, Upload, FileCheck } from 'lucide-react';
 import { HOSTS } from '@/utils/hostsMockData'; 
@@ -52,7 +52,6 @@ function AddHostModal({ onClose }) {
   };
 
   const onSubmit = (data) => {
-    // 🌟 تجميع الداتا بناءً على مواصفات الـ Backend في الـ Swagger
     const finalData = {
       hostName: data.name.trim(),
       ip: data.ip?.trim() || "",
@@ -199,6 +198,7 @@ function AddHostModal({ onClose }) {
 export default function Hosts() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const navigate = useNavigate(); // لتفعيل التنقل المباشر بالـ code إذا لزم الأمر
 
   const { data: devicesData, isLoading, isError } = useGetDevices();
 
@@ -289,6 +289,7 @@ export default function Hosts() {
                     <input type="checkbox" className="accent-purple-500 cursor-pointer w-3.5 h-3.5" />
                   </td>
                   <td className="py-3 px-4 font-medium">
+                    {/* التوجيه هنا يمرر الـ ID الفعلي للجهاز لقراءة البيانات بشكل صحيح */}
                     <Link
                       to={`/observability/hosts/${doc.id}`}
                       className="text-blue-400 hover:text-cyan-400 hover:underline transition-colors"

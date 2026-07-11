@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getDeviceById } from '../services/deviceService';
+import { getDeviceById } from '@/services/devices.services';
 
 export const useGetDeviceById = (id, includeServices = false, includeAlerts = false) => {
   return useQuery({
