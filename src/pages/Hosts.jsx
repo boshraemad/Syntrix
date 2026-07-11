@@ -6,20 +6,33 @@ import { HOSTS } from '@/utils/hostsMockData';
 import { showSuccessToast } from '@/utils/toast';
 import { useGetDevices } from '@/features/devices/hooks/getDevices';
 import { useCreateDevice } from '../features/devices/hooks/createDevices'; 
+import { useUpdateDevice } from '../features/devices/hooks/updateDevice'; // 🌟 استيراد هوك التعديل الجديد
 
-function AddHostModal({ onClose }) {
+function AddHostModal({ onClose, initialData }) {
+  const isEditMode = !!initialData; // 🌟 فحص إذا كنا في وضع التعديل أم الإضافة
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({ defaultValues: { type: 'server', criticality: 'medium' } });
+  } = useForm({ 
+    defaultValues: { 
+      name: initialData?.title || '', // وضع القيم القديمة تلقائياً في الفورم
+      ip: initialData?.ip || '',
+      type: 'server', 
+      criticality: 'medium' 
+    } 
+  });
 
   const fileRef = useRef(null);
   const [jsonData, setJsonData] = useState(null);
   const [jsonFileName, setJsonFileName] = useState('');
   const [jsonError, setJsonError] = useState('');
 
-  const { mutate: handleAddHost, isPending: isSubmitting } = useCreateDevice();
+  const { mutate: handleAddHost, isPending: isCreating } = useCreateDevice();
+  const { mutate: handleUpdateHost, isPending: isUpdating } = useUpdateDevice(); // 🌟 هوك التعديل
+
+  const isSubmitting = isCreating || isUpdating;
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -57,12 +70,23 @@ function AddHostModal({ onClose }) {
       ip: data.ip?.trim() || "",
     };
 
-    handleAddHost(finalData, {
-      onSuccess: () => {
-        showSuccessToast(`Host "${data.name.trim()}" added`);
-        onClose();
-      },
-    });
+    if (isEditMode) {
+      // 🌟 تشغيل دالة التعديل وإرسال الـ ID مع الـ Body الجديد
+      handleUpdateHost({ id: initialData.id, deviceData: finalData }, {
+        onSuccess: () => {
+          showSuccessToast(`Host "${data.name.trim()}" updated successfully`);
+          onClose();
+        }
+      });
+    } else {
+      // تشغيل دالة الإضافة الافتراضية
+      handleAddHost(finalData, {
+        onSuccess: () => {
+          showSuccessToast(`Host "${data.name.trim()}" added`);
+          onClose();
+        },
+      });
+    }
   };
 
   const inputClass =
@@ -75,7 +99,8 @@ function AddHostModal({ onClose }) {
 
       <div className="relative w-full max-w-lg bg-[#0a0a0a] border border-purple-500/30 rounded-xl shadow-[0_0_40px_rgba(168,85,247,0.15)] max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-white/5">
-          <h2 className="text-lg font-bold tracking-tight">Add host</h2>
+          {/* 🌟 تغيير العنوان بناءً على الـ Mode */}
+          <h2 className="text-lg font-bold tracking-tight">{isEditMode ? 'Update host' : 'Add host'}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1">
             <X size={18} />
           </button>
@@ -181,12 +206,13 @@ function AddHostModal({ onClose }) {
             >
               Cancel
             </button>
+            {/* 🌟 تغيير نص الزرار بناءً على الـ Mode والحالة الحاليّة */}
             <button
               type="submit"
               disabled={isSubmitting}
               className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] cursor-pointer disabled:opacity-50"
             >
-              <Plus size={14} strokeWidth={3} /> Add host
+              <Plus size={14} strokeWidth={3} /> {isEditMode ? (isUpdating ? 'Updating...' : 'Update host') : (isCreating ? 'Adding...' : 'Add host')}
             </button>
           </div>
         </form>
@@ -198,7 +224,7 @@ function AddHostModal({ onClose }) {
 export default function Hosts() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
-  const navigate = useNavigate(); // لتفعيل التنقل المباشر بالـ code إذا لزم الأمر
+  const [editingHost, setEditingHost] = useState(null); // 🌟 State لحفظ الجهاز المراد تعديله
 
   const { data: devicesData, isLoading, isError } = useGetDevices();
 
@@ -211,6 +237,7 @@ export default function Hosts() {
         title: h.host.name,
         desc: h.meta.description,
         tags: h.meta.tags,
+        ip: h.host.ip?.[0] || ''
       }));
     }
 
@@ -219,6 +246,7 @@ export default function Hosts() {
       title: item.hostName || item.title || item.name || 'Unknown Host',
       desc: item.desc || item.description || 'No description provided.',
       tags: item.tags || [],
+      ip: item.ip || '', // حفظ الـ IP لاستدعائه عند التعديل
     }));
   }, [devicesData, isLoading, isError]);
 
@@ -233,7 +261,10 @@ export default function Hosts() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 mb-6 gap-4 border-b border-white/5">
         <h1 className="text-3xl font-bold tracking-tight text-white">Hosts</h1>
         <button
-          onClick={() => setShowAdd(true)}
+          onClick={() => {
+            setEditingHost(null); // التأكد من تصفير الـ Edit Mode عند فتح إضافة جديد
+            setShowAdd(true);
+          }}
           className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white px-4 py-2 rounded-sm text-sm font-semibold tracking-wider transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] cursor-pointer"
         >
           <Plus size={16} strokeWidth={3} />
@@ -289,7 +320,6 @@ export default function Hosts() {
                     <input type="checkbox" className="accent-purple-500 cursor-pointer w-3.5 h-3.5" />
                   </td>
                   <td className="py-3 px-4 font-medium">
-                    {/* التوجيه هنا يمرر الـ ID الفعلي للجهاز لقراءة البيانات بشكل صحيح */}
                     <Link
                       to={`/observability/hosts/${doc.id}`}
                       className="text-blue-400 hover:text-cyan-400 hover:underline transition-colors"
@@ -313,7 +343,14 @@ export default function Hosts() {
                     </div>
                   </td>
                   <td className="py-3 px-4 text-right align-middle">
-                    <button className="text-gray-500 hover:text-cyan-400 transition-colors p-1 rounded-sm opacity-0 group-hover:opacity-100 cursor-pointer">
+                    {/* 🌟 زر الـ Pencil القديم: يظهر عند الـ Hover ومربوط بالـ Click لفتح المودال وتمرير بيانات الـ Row الحالية */}
+                    <button 
+                      onClick={() => {
+                        setEditingHost(doc);
+                        setShowAdd(true);
+                      }}
+                      className="text-gray-500 hover:text-cyan-400 transition-colors p-1 rounded-sm opacity-0 group-hover:opacity-100 cursor-pointer"
+                    >
                       <Pencil size={14} />
                     </button>
                   </td>
@@ -331,7 +368,16 @@ export default function Hosts() {
         </table>
       </div>
 
-      {showAdd && <AddHostModal onClose={() => setShowAdd(false)} />}
+      {/* 🌟 تمرير الـ editingHost للمودال إن وُجد */}
+      {showAdd && (
+        <AddHostModal 
+          onClose={() => {
+            setShowAdd(false);
+            setEditingHost(null);
+          }} 
+          initialData={editingHost}
+        />
+      )}
     </div>
   );
 }
