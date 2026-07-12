@@ -1,217 +1,305 @@
-import React, { useState, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { X, Plus, Save, Upload, FileCheck } from 'lucide-react';
-import { addLogSource, updateLogSource } from '@/utils/logsMockData';
+import React, { useState, useEffect } from 'react';
+import { X, Loader2 } from 'lucide-react';
+import useCreateLogSource from '@/features/logsources/hooks/useCreateLogSource';
+import useUpdateLogSource from '@/features/logsources/hooks/useUpdateLogSource';
 
-const CATEGORIES = ['endpoint', 'windows', 'network', 'cloud', 'application'];
-const AGENTS = ['Auditbeat', 'Winlogbeat', 'Filebeat', 'Elastic Agent', 'Packetbeat', 'Custom'];
-const FORMATS = ['ECS', 'raw', 'CEF', 'JSON', 'syslog'];
+export default function LogSourceModal({ mode, source, onClose, onSaved }) {
+  const isEdit = mode === 'edit';
+  const { createSource, loading: isCreating } = useCreateLogSource();
+  const { updateSource, loading: isUpdating } = useUpdateLogSource();
+  const [submitting, setSubmitting] = useState(false);
 
-export default function LogSourceModal({ mode = 'add', source = null, onClose, onSaved }) {
-  const isEdit = mode === 'edit' && source;
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    defaultValues: isEdit
-      ? {
-          name: source.source.name,
-          description: source.source.description,
-          category: source.source.category,
-          agent: source.collector.agent,
-          dataset: source.source.dataset,
-          index: source.source.index,
-          format: source.collector.format,
-          tags: (source.meta.tags || []).join(', '),
-          enabled: source.meta.enabled,
-        }
-      : { category: 'application', agent: 'Filebeat', format: 'ECS', enabled: true },
+  // الـ state مفرودة بالكامل بناءً على مواصفات الـ Swagger الجديد
+  const [formData, setFormData] = useState({
+    name: '',
+    category: '',
+    vendor: '',
+    product: '',
+    description: '',
+    dataset: '',
+    agent: '',
+    pipeline: '',
+    index: '',
+    retentionDays: 30,
+    shards: 1,
+    enabled: true,
+    tags: '',
   });
 
-  const fileRef = useRef(null);
-  const [jsonData, setJsonData] = useState(null);
-  const [jsonFileName, setJsonFileName] = useState('');
-  const [jsonError, setJsonError] = useState('');
+  // فك الـ Nested structure القديم عشان نملا الـ Form في حالة الـ Edit
+  useEffect(() => {
+    if (isEdit && source) {
+      setFormData({
+        name: source.source?.name || '',
+        category: source.source?.category || '',
+        vendor: source.source?.vendor || '',
+        product: source.source?.product || '',
+        description: source.source?.description || '',
+        dataset: source.source?.dataset || '',
+        agent: source.collector?.agent || '',
+        pipeline: source.collector?.pipeline || '',
+        index: source.source?.index || '',
+        retentionDays: source.storage?.retentionDays ?? 30,
+        shards: source.storage?.shards ?? 1,
+        enabled: source.meta?.enabled ?? true,
+        tags: source.meta?.tags ? source.meta.tags.join(', ') : '',
+      });
+    }
+  }, [isEdit, source]);
 
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setJsonError('');
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const parsed = JSON.parse(ev.target.result);
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-          throw new Error('the file must contain a JSON object');
-        }
-        setJsonData(parsed);
-        setJsonFileName(file.name);
-      } catch (err) {
-        setJsonData(null);
-        setJsonFileName('');
-        setJsonError(`Could not parse JSON: ${err.message}`);
-      }
-    };
-    reader.onerror = () => setJsonError('Could not read the file');
-    reader.readAsText(file);
-    e.target.value = '';
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
-  const clearJson = () => {
-    setJsonData(null);
-    setJsonFileName('');
-    setJsonError('');
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
 
-  const onSubmit = (data) => {
+    // تجهيز الداتا وتحويل القيم الرقمية والـ Tags لـ Array
     const payload = {
-      name: data.name.trim(),
-      description: data.description?.trim() || '',
-      category: data.category,
-      agent: data.agent,
-      dataset: data.dataset?.trim() || undefined,
-      index: data.index?.trim() || undefined,
-      format: data.format,
-      tags: data.tags ? data.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-      enabled: !!data.enabled,
-      details: jsonData,
+      ...formData,
+      retentionDays: parseInt(formData.retentionDays, 10) || 0,
+      shards: parseInt(formData.shards, 10) || 0,
+      tags: formData.tags
+        ? formData.tags.split(',').map((t) => t.trim()).filter((t) => t !== '')
+        : [],
     };
-    const result = isEdit ? updateLogSource(source.id, payload) : addLogSource(payload);
-    onSaved(result);
+
+    try {
+      if (isEdit) {
+        // الـ PATCH المفرود باستخدام الـ Hook الجديد
+        const response = await updateSource(source.id, payload);
+        onSaved(response);
+      } else {
+        // الـ CREATE المفرود
+        const response = await createSource(payload);
+        onSaved(response);
+      }
+    } catch (error) {
+      console.error('Failed to save log source:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const inputClass =
-    'w-full bg-[#111] border border-purple-500/20 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/50 focus:shadow-[0_0_10px_rgba(56,189,248,0.15)] transition-all placeholder-gray-600';
-  const labelClass = 'text-[10px] font-semibold text-gray-500 uppercase tracking-widest';
+  const isLoading = isCreating || isUpdating || submitting;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative w-full max-w-lg bg-[#0a0a0a] border border-purple-500/30 rounded-xl shadow-[0_0_40px_rgba(168,85,247,0.15)] max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-white/5">
-          <h2 className="text-lg font-bold tracking-tight">{isEdit ? 'Edit log source' : 'Add log source'}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1">
-            <X size={18} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#050505] border border-cyan-500/20 w-full max-w-2xl rounded-xl shadow-[0_0_50px_rgba(6,182,212,0.15)] flex flex-col max-h-[90vh]">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            {isEdit ? 'Edit Log Source' : 'Create New Log Source'}
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors cursor-pointer">
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4">
-          <div className="space-y-1.5">
-            <label className={labelClass}>Source name</label>
-            <input
-              {...register('name', { required: 'Source name is required' })}
-              placeholder="e.g. [Windows] Sysmon"
-              className={inputClass}
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Source Name</label>
+              <input
+                type="text"
+                name="name"
+                required={!isEdit}
+                value={formData.name}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Category */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Category</label>
+              <input
+                type="text"
+                name="category"
+                required={!isEdit}
+                value={formData.category}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Vendor */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Vendor</label>
+              <input
+                type="text"
+                name="vendor"
+                required={!isEdit}
+                value={formData.vendor}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Product */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Product</label>
+              <input
+                type="text"
+                name="product"
+                required={!isEdit}
+                value={formData.product}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Dataset */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Dataset</label>
+              <input
+                type="text"
+                name="dataset"
+                required={!isEdit}
+                value={formData.dataset}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Agent */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Agent</label>
+              <input
+                type="text"
+                name="agent"
+                required={!isEdit}
+                value={formData.agent}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Pipeline */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Pipeline</label>
+              <input
+                type="text"
+                name="pipeline"
+                required={!isEdit}
+                value={formData.pipeline}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Index */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Index</label>
+              <input
+                type="text"
+                name="index"
+                required={!isEdit}
+                value={formData.index}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
+              />
+            </div>
+
+            {/* Retention Days */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Retention Days</label>
+              <input
+                type="number"
+                name="retentionDays"
+                required={!isEdit}
+                min="0"
+                value={formData.retentionDays}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors font-mono"
+              />
+            </div>
+
+            {/* Shards */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Shards</label>
+              <input
+                type="number"
+                name="shards"
+                required={!isEdit}
+                min="0"
+                value={formData.shards}
+                onChange={handleChange}
+                className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Description</label>
+            <textarea
+              name="description"
+              rows="3"
+              value={formData.description}
+              onChange={handleChange}
+              className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors resize-none"
             />
-            {errors.name && <p className="text-red-400 text-xs">{errors.name.message}</p>}
           </div>
 
-          <div className="space-y-1.5">
-            <label className={labelClass}>Description</label>
+          {/* Tags */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Tags (comma separated)</label>
             <input
-              {...register('description')}
-              placeholder="e.g. System monitor logs"
-              className={inputClass}
+              type="text"
+              name="tags"
+              placeholder="e.g. production, security, auth"
+              value={formData.tags}
+              onChange={handleChange}
+              className="bg-[#0a0a0a] border border-cyan-500/10 focus:border-cyan-400/50 rounded-md px-3 py-2 text-sm text-white outline-none transition-colors"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelClass}>Category</label>
-              <select {...register('category')} className={`${inputClass} cursor-pointer`}>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className={labelClass}>Collector / agent</label>
-              <select {...register('agent')} className={`${inputClass} cursor-pointer`}>
-                {AGENTS.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </div>
+          {/* Enabled Checkbox */}
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="enabled"
+              name="enabled"
+              checked={formData.enabled}
+              onChange={handleChange}
+              className="accent-cyan-500 cursor-pointer w-4 h-4"
+            />
+            <label htmlFor="enabled" className="text-xs uppercase tracking-wider text-gray-300 font-semibold cursor-pointer select-none">
+              Enabled
+            </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelClass}>Dataset</label>
-              <input {...register('dataset')} placeholder="e.g. windows.sysmon" className={inputClass} />
-            </div>
-            <div className="space-y-1.5">
-              <label className={labelClass}>Format</label>
-              <select {...register('format')} className={`${inputClass} cursor-pointer`}>
-                {FORMATS.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className={labelClass}>Index / data stream</label>
-            <input {...register('index')} placeholder="e.g. logs-windows.sysmon-default" className={inputClass} />
-          </div>
-
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" {...register('enabled')} className="accent-cyan-500 w-3.5 h-3.5 cursor-pointer" />
-            <span className="text-sm text-gray-300">Enabled (actively ingesting)</span>
-          </label>
-
-          <div className="space-y-1.5">
-            <label className={labelClass}>Detailed info (JSON file) — optional</label>
-            {!jsonData ? (
-              <label className="flex flex-col items-center justify-center gap-2 border border-dashed border-purple-500/30 rounded-md py-6 px-3 cursor-pointer hover:border-cyan-400/50 hover:bg-cyan-400/5 transition-all text-center">
-                <Upload size={20} className="text-gray-500" />
-                <span className="text-xs text-gray-400">Click to upload a log-source JSON document</span>
-                <span className="text-[10px] text-gray-600 leading-relaxed">
-                  Populates ingestion stats, storage, detection coverage, sample events, and more.
-                  The fields above take precedence.
-                </span>
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  ref={fileRef}
-                  onChange={handleFile}
-                  className="hidden"
-                />
-              </label>
-            ) : (
-              <div className="flex items-center justify-between gap-2 border border-green-500/30 bg-green-500/5 rounded-md px-3 py-2.5">
-                <span className="flex items-center gap-2 text-sm text-green-400 truncate">
-                  <FileCheck size={16} className="flex-shrink-0" />
-                  <span className="truncate">{jsonFileName}</span>
-                </span>
-                <button type="button" onClick={clearJson} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-            {jsonError && <p className="text-red-400 text-xs">{jsonError}</p>}
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-2">
+          {/* Footer Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer"
+              disabled={isLoading}
+              className="px-4 py-2 bg-transparent hover:bg-white/5 text-gray-400 hover:text-white rounded-md text-xs uppercase tracking-wider font-semibold border border-white/10 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] cursor-pointer disabled:opacity-50"
+              disabled={isLoading}
+              className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-5 py-2 rounded-md text-xs uppercase tracking-wider font-semibold transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(56,189,248,0.3)] disabled:opacity-50 disabled:transform-none cursor-pointer"
             >
-              {isEdit ? <Save size={14} /> : <Plus size={14} strokeWidth={3} />}
-              {isEdit ? 'Save changes' : 'Add log source'}
+              {isLoading && <Loader2 size={14} className="animate-spin" />}
+              {isEdit ? 'Save Changes' : 'Create Source'}
             </button>
           </div>
         </form>
+
       </div>
     </div>
   );

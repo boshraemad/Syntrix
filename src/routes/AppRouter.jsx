@@ -74,7 +74,7 @@ const router = createBrowserRouter([
             {path:"machine-learning", element:<MachineLearning/>},
             {path:"observability", element:<Observability/>},
             {path:"observability/logs", element:<Logs/>},
-            {path:"observability/logs/:sourceId", element:<LogSourceDetail/>},
+            {path:"observability/logs/:id", element:<LogSourceDetail/>},
             {path:"observability/hosts", element:<Hosts/>},
             {path:"observability/hosts/:hostId", element:<HostDetail/>},
             {path:"security", element:<SecurityHub/>},
