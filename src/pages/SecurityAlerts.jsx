@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown, Bell } from 'lucide-react';
-import { getAllAlerts } from '@/utils/securityData';
+import { Search, Bell, Activity, ShieldAlert } from 'lucide-react';
+import { useGetAlerts } from '@/features/alerts/hooks/getAlerts';
 
 const SEVERITY_COLORS = {
   critical: '#ef4444',
@@ -11,7 +11,6 @@ const SEVERITY_COLORS = {
   info: '#8b5cf6',
 };
 const sevColor = (s) => SEVERITY_COLORS[String(s || '').toLowerCase()] || '#38bdf8';
-const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
 const formatDate = (iso) => {
   if (!iso) return 'n/a';
@@ -28,43 +27,25 @@ export default function SecurityAlerts() {
   const [severity, setSeverity] = useState('all');
   const [status, setStatus] = useState('all');
 
-  const alerts = useMemo(
-    () =>
-      getAllAlerts().sort((a, b) => {
-        const s = (SEV_ORDER[a.severity?.toLowerCase()] ?? 9) - (SEV_ORDER[b.severity?.toLowerCase()] ?? 9);
-        if (s !== 0) return s;
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      }),
-    [],
-  );
+  // استدعاء الـ Hook المخصص
+  const { data, isLoading, isError } = useGetAlerts({ severity, status, search });
 
-  const counts = useMemo(() => {
-    const c = { critical: 0, high: 0, medium: 0, low: 0 };
-    alerts.forEach((a) => {
-      const k = a.severity?.toLowerCase();
-      if (c[k] !== undefined) c[k] += 1;
-    });
-    return c;
-  }, [alerts]);
+  const alerts = Array.isArray(data) ? data : data?.data || [];
+
+  // حساب الإحصائيات
+  const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+  alerts.forEach((a) => {
+    const k = a.severity?.toLowerCase();
+    if (counts[k] !== undefined) counts[k] += 1;
+  });
 
   const openCount = alerts.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS').length;
-
-  const filtered = alerts.filter((a) => {
-    if (severity !== 'all' && a.severity?.toLowerCase() !== severity) return false;
-    if (status !== 'all' && a.status !== status) return false;
-    const q = search.toLowerCase();
-    return (
-      a.name.toLowerCase().includes(q) ||
-      a.rule.toLowerCase().includes(q) ||
-      String(a.scope || '').toLowerCase().includes(q)
-    );
-  });
 
   const selectClass =
     'bg-[#0a0a0a] border border-purple-500/20 rounded-md px-3 py-2.5 text-sm text-gray-300 outline-none focus:border-cyan-400/50 cursor-pointer';
 
   return (
-    <div className="pt-6 pb-8 px-4 text-white flex-1 h-full font-sans w-full flex flex-col">
+    <div className="pt-6 pb-8 px-4 text-white flex-1 h-full font-sans w-full flex flex-col bg-[#050505]">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 mb-6 gap-4 border-b border-white/5">
         <div className="flex items-center gap-3">
@@ -122,47 +103,61 @@ export default function SecurityAlerts() {
 
       {/* Table */}
       <div className="flex-1 bg-transparent mt-2 overflow-x-auto">
-        <table className="w-full text-left text-sm border-collapse min-w-[900px]">
-          <thead>
-            <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest">
-              <th className="py-4 px-4 font-semibold">Alert</th>
-              <th className="py-4 px-4 font-semibold">Severity</th>
-              <th className="py-4 px-4 font-semibold">Status</th>
-              <th className="py-4 px-4 font-semibold">Rule</th>
-              <th className="py-4 px-4 font-semibold">Scope</th>
-              <th className="py-4 px-4 font-semibold text-right">Confidence</th>
-              <th className="py-4 px-4 font-semibold text-right">Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((a) => (
-              <tr
-                key={a.id}
-                onClick={() => navigate(`/security/alerts/${a.id}?from=alerts`)}
-                className="border-b border-white/5 hover:bg-purple-500/5 transition-colors cursor-pointer group"
-              >
-                <td className="py-3 px-4 font-medium text-white group-hover:text-cyan-400 transition-colors">{a.name}</td>
-                <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-sm" style={{ backgroundColor: `${sevColor(a.severity)}22`, color: sevColor(a.severity), border: `1px solid ${sevColor(a.severity)}55` }}>
-                    {a.severity}
-                  </span>
-                </td>
-                <td className="py-3 px-4 font-mono text-xs text-gray-300">{a.status}</td>
-                <td className="py-3 px-4 text-gray-400 text-xs">{a.rule}</td>
-                <td className="py-3 px-4 text-gray-400 font-mono text-xs">{a.scope}</td>
-                <td className="py-3 px-4 text-right font-mono text-gray-400">{Math.round(a.confidence * 100)}%</td>
-                <td className="py-3 px-4 text-right font-mono text-xs text-gray-500">{formatDate(a.timestamp)}</td>
+        {isLoading && !data ? (
+          <div className="flex flex-col items-center justify-center py-12 text-cyan-400 gap-2 font-mono text-xs">
+            <Activity size={24} className="animate-pulse" />
+            <p>Syncing alert dashboard with cluster...</p>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-12 text-red-400 gap-2 font-mono text-xs">
+            <ShieldAlert size={24} />
+            <p>Error loading alerts from the server.</p>
+          </div>
+        ) : (
+          <table className="w-full text-left text-sm border-collapse min-w-[900px]">
+            <thead>
+              <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest">
+                <th className="py-4 px-4 font-semibold">Alert</th>
+                <th className="py-4 px-4 font-semibold">Severity</th>
+                <th className="py-4 px-4 font-semibold">Status</th>
+                <th className="py-4 px-4 font-semibold">Rule</th>
+                <th className="py-4 px-4 font-semibold">Scope</th>
+                <th className="py-4 px-4 font-semibold text-right">Confidence</th>
+                <th className="py-4 px-4 font-semibold text-right">Time</th>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan="7" className="py-8 text-center text-gray-500">
-                  No alerts match the current filters.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {alerts.map((a) => (
+                <tr
+                  key={a.id}
+                  onClick={() => navigate(`/security/alerts/${a.id}?from=alerts`)}
+                  className="border-b border-white/5 hover:bg-purple-500/5 transition-colors cursor-pointer group"
+                >
+                  <td className="py-3 px-4 font-medium text-white group-hover:text-cyan-400 transition-colors">{a.name}</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-sm" style={{ backgroundColor: `${sevColor(a.severity)}22`, color: sevColor(a.severity), border: `1px solid ${sevColor(a.severity)}55` }}>
+                      {a.severity}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 font-mono text-xs text-gray-300">{a.status}</td>
+                  <td className="py-3 px-4 text-gray-400 text-xs">{a.rule}</td>
+                  <td className="py-3 px-4 text-gray-400 font-mono text-xs">{a.scope || a.source}</td>
+                  <td className="py-3 px-4 text-right font-mono text-gray-400">
+                    {a.confidence ? `${Math.round(a.confidence * 100)}%` : 'n/a'}
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono text-xs text-gray-500">{formatDate(a.timestamp || a.createdAt)}</td>
+                </tr>
+              ))}
+              {alerts.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="py-8 text-center text-gray-500">
+                    No alerts match the current filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

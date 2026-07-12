@@ -1,9 +1,9 @@
 import React from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
-  ChevronLeft, AlertTriangle, Server, ShieldCheck, ShieldAlert, Clock, Crosshair, Globe,
+  ChevronLeft, AlertTriangle, Server, ShieldCheck, ShieldAlert, Clock, Crosshair, Globe, Activity,
 } from 'lucide-react';
-import { getSecurityAlertById } from '@/utils/securityData';
+import { useGetAlertById } from '@/features/alerts/hooks/getAlertsById';
 
 const SEVERITY_COLORS = {
   critical: '#ef4444',
@@ -61,13 +61,24 @@ function Field({ label, value, mono = true }) {
 export default function AlertDetail() {
   const { alertId } = useParams();
   const [searchParams] = useSearchParams();
-  const found = getSecurityAlertById(alertId);
 
-  if (!found) {
+  // استدعاء الـ Hook المخصص
+  const { data: found, isLoading, isError } = useGetAlertById(alertId);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col flex-1 h-full items-center justify-center text-cyan-400 bg-[#050505] gap-4 font-mono text-xs">
+        <Activity size={32} className="animate-pulse" />
+        <p>Loading detection context from SIEM cluster...</p>
+      </div>
+    );
+  }
+
+  if (isError || !found) {
     return (
       <div className="flex flex-col flex-1 h-full items-center justify-center text-gray-400 bg-[#050505] gap-4">
         <ShieldAlert size={48} className="opacity-20" />
-        <p>Alert "{alertId}" was not found.</p>
+        <p>Alert "{alertId}" was not found or failed to stream.</p>
         <Link to="/security/alerts" className="text-cyan-400 hover:underline text-sm">
           Back to Alerts
         </Link>
@@ -75,7 +86,9 @@ export default function AlertDetail() {
     );
   }
 
-  const { alert, host } = found;
+  const alert = found.alert || found;
+  const host = found.host || null;
+
   const color = sevColor(alert.severity);
   const mitre = alert.mitre && alert.mitre.length ? alert.mitre : host?.risk?.mitre || [];
 
@@ -111,7 +124,7 @@ export default function AlertDetail() {
                   <>
                     on{' '}
                     <Link to={`/observability/hosts/${host.id}`} className="text-cyan-400 hover:underline">
-                      {host.host.name}
+                      {host.host?.name || host.hostName}
                     </Link>
                   </>
                 ) : (
@@ -127,13 +140,13 @@ export default function AlertDetail() {
             <div className="text-center pl-2">
               <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Confidence</div>
               <div className="text-xl font-mono font-bold" style={{ color }}>
-                {Math.round(alert.confidence * 100)}%
+                {alert.confidence ? `${Math.round(alert.confidence * 100)}%` : 'n/a'}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Triage actions (UI only for now) */}
+        {/* Actions UI */}
         <div className="flex items-center gap-2 mt-4">
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs uppercase tracking-wider font-semibold border border-purple-500/30 text-gray-300 hover:border-cyan-400/50 hover:text-white transition-all cursor-pointer">
             <ShieldCheck size={13} /> Acknowledge
@@ -155,8 +168,8 @@ export default function AlertDetail() {
               <Field label="Alert ID" value={alert.id} />
               <Field label="Severity" value={alert.severity} />
               <Field label="Status" value={alert.status} />
-              <Field label="Confidence" value={`${Math.round(alert.confidence * 100)}%`} />
-              <Field label="Detected at" value={formatDate(alert.timestamp)} />
+              <Field label="Confidence" value={alert.confidence ? `${Math.round(alert.confidence * 100)}%` : 'n/a'} />
+              <Field label="Detected at" value={formatDate(alert.timestamp || alert.createdAt)} />
               <Field label="Source" value={alert.source} mono={false} />
             </div>
             <div className="mt-4">
@@ -169,14 +182,14 @@ export default function AlertDetail() {
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Hostname" value={
                   <Link to={`/observability/hosts/${host.id}`} className="text-cyan-400 hover:underline">
-                    {host.host.name}
+                    {host.host?.name || host.hostName}
                   </Link>
                 } />
-                <Field label="IP" value={host.host.ip.join(', ')} />
-                <Field label="OS" value={host.host.os.name} />
-                <Field label="Type" value={host.host.type} />
-                <Field label="Criticality" value={host.meta.criticality} />
-                <Field label="Owner" value={host.meta.owner} mono={false} />
+                <Field label="IP" value={host.host?.ip?.join(', ') || host.ip} />
+                <Field label="OS" value={host.host?.os?.name} />
+                <Field label="Type" value={host.host?.type} />
+                <Field label="Criticality" value={host.meta?.criticality} />
+                <Field label="Owner" value={host.meta?.owner} mono={false} />
               </div>
             </Section>
           ) : (
