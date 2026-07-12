@@ -79,16 +79,16 @@ export default function LogSourceDetail() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className={`text-xs px-2.5 py-1 rounded-sm font-semibold tracking-wider uppercase ${source.meta?.enabled ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+          {/* <span className={`text-xs px-2.5 py-1 rounded-sm font-semibold tracking-wider uppercase ${source.meta?.enabled ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
             {source.meta?.enabled ? 'Enabled' : 'Disabled'}
-          </span>
-          <button
+          </span> */}
+          {/* <button
             onClick={() => setModalOpen(true)}
             className="flex items-center gap-2 bg-[#0a0a0a] border border-white/10 hover:border-cyan-500/40 text-gray-300 hover:text-white px-4 py-2 rounded-sm text-sm font-semibold transition-colors cursor-pointer"
           >
             <Pencil size={14} />
             EDIT
-          </button>
+          </button> */}
         </div>
       </div>
 
