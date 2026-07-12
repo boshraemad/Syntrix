@@ -18,9 +18,7 @@ export async function logoutAll() {
 }
 
 export async function refreshToken() {
-    const res = await axiosInstance.post("/auth/refresh", {}, {
-        withCredentials: true 
-    });
+    const res = await axiosInstance.post("/auth/refresh");
     return res.data;
 }
 export async function getActiveSessions(){

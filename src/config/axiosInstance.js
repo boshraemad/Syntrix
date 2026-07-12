@@ -12,6 +12,7 @@ if (!URL) {
 const config = {
   maxBodyLength: 10 * 1024 * 1024, // Set to 10MB, adjust as needed
   baseURL: URL,
+  withCredentials: true,
   headers: {
     "Accept": "application/json",
     "Content-Type": "application/json",
