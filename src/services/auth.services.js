@@ -17,8 +17,10 @@ export async function logoutAll() {
     return res.data;
 }
 
-export async function refreshToken() {
-    const res = await axiosInstance.post("/auth/refresh");
+export async function refreshToken(storedRefreshToken) {
+    const res = await axiosInstance.post("/auth/refresh", { 
+        refreshToken: storedRefreshToken 
+    });
     return res.data;
 }
 export async function getActiveSessions(){

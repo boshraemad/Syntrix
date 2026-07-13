@@ -1,41 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
-import { refreshToken } from "@/services/auth.services.js";
+import { refreshToken } from "@/services/auth.services";
 import axiosInstance from "@/config/axiosInstance";
 import { showErrorToast } from "@/utils/toast";
+
 export const useRefreshToken = () => {
   return useQuery({
     queryKey: ["refreshToken"],
     queryFn: async () => {
+      // 1. نجيب الـ refreshToken من الـ localStorage
+      const storedRefreshToken = localStorage.getItem("refreshToken");
+      
+      // لو مش موجودة، ارمي error فوراً عشان تروح للـ catch
+      if (!storedRefreshToken) {
+        throw new Error("No refresh token found");
+      }
+
       try {
-        const data = await refreshToken();
+        // 2. نمرر الـ token للـ service عشان تتبعت في الـ Body
+        const data = await refreshToken(storedRefreshToken);
         
-        // 1. Safely attach the fresh token to your Axios instance header
-        const token =data.token; // adjust based on your API response structure
-        if (token) {
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          localStorage.setItem("token" , data.token);
+        // 3. نحدث الـ accessToken الجديد في الـ headers والـ localStorage
+        const newAccessToken = data.token; 
+        if (newAccessToken) {
+          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+          localStorage.setItem("token", newAccessToken);
         }
         
-        // 2. If you are using global state (like Zustand or Redux), update it here:
-        // useAuthStore.getState().setToken(token);
+        // 4. لو الباك إند بيرجع كمان refreshToken جديدة (تحديث دوري)، نخزنها برضه
+        if (data.refreshToken) {
+          localStorage.setItem("refreshToken", data.refreshToken);
+        }
 
         return data;
       } catch (error) {
-        // If the refresh token is expired or invalid, handle force logout here
-        showErrorToast("User is not logged in or session expired.")
+        // لو الـ token منتهية أو ممسوحة، بنعمل تنظيف للمكان هنا
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user-data");
+        
+        showErrorToast("Session expired. Please login again.");
         console.error("Session expired. Logging out...", error);
-        // useAuthStore.getState().logout();
         throw error;
       }
     },
     
-    // Refresh every 14 minutes (1,680,000 ms) to give a 2-minute buffer before a 30-min expiry
-    refetchInterval: 840000, 
-    
-    // Keeps the timer ticking even if the browser window is in the background
+    refetchInterval: 840000, // 14 دقيقة
     refetchIntervalInBackground: true, 
-    
-    // Prevent aggressive automatic refetching on basic user actions
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: "always",
