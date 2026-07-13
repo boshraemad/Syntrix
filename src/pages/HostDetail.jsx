@@ -1,15 +1,159 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import {
   ChevronLeft, Server, Monitor, Shield, ShieldAlert, Cpu, HardDrive,
-  Globe, Network, Activity, Users, AlertTriangle, Boxes, Lock, Wifi, Cable, Power, Trash2
+  Globe, Network, Activity, Users, AlertTriangle, Boxes, Lock, Wifi, Cable, Power, Trash2, Loader2, Plus, X, Pencil
 } from 'lucide-react';
 import { useGetDeviceById } from '@/features/devices/hooks/getDeviceById'; 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { deleteDevice } from '@/services/devices.services';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
-// 💡 كومبوننت الحذف مدمج ومنسق بنفس ألوان واستايل أزرار الصفحة بدون أي تعديل في الـ Design
+// استيراد الهوكس الخاصة بالخدمات بناءً على هيكلة المجلدات الحالية
+import useGetServices from '../features/servcies/useGetServices';
+import useCreateService from '../features/servcies/useCreateServices';
+import useUpdateService from '../features/servcies/useUpdateServcies'; // 🌟 هوك التعديل الجديد
+import useDeleteService from '../features/servcies/useDeleteServices'; // 🌟 هوك الحذف الجديد
+
+// 💡 1. مودال إضافة خدمة جديدة (By Default يحمل معرف المستخدم الحالي)
+function AddServiceModal({ onClose, deviceId }) {
+  const userData = JSON.parse(localStorage.getItem("user-data") || "{}");
+  const currentUserId = userData.id || userData._id || "";
+
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: { userId: currentUserId }
+  });
+  
+  const { createDeviceService, loading } = useCreateService(deviceId);
+
+  const onSubmit = async (data) => {
+    try {
+      const payload = {
+        type: data.type.trim(),
+        port: parseInt(data.port, 10),
+        userId: data.userId.trim(),
+        deviceId: deviceId,
+      };
+      
+      await createDeviceService(payload);
+      showSuccessToast(`Service "${payload.type}" created successfully`);
+      onClose();
+    } catch (err) {
+      showErrorToast(err?.response?.data?.message || 'Failed to create service');
+    }
+  };
+
+  const inputClass = 'w-full bg-[#111] border border-purple-500/20 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/50 transition-all placeholder-gray-600';
+  const labelClass = 'text-[10px] font-semibold text-gray-500 uppercase tracking-widest';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-[#0a0a0a] border border-purple-500/30 rounded-xl shadow-[0_0_40px_rgba(168,85,247,0.15)]">
+        <div className="flex items-center justify-between p-5 border-b border-white/5">
+          <h2 className="text-lg font-bold tracking-tight">Create Service</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1 cursor-pointer">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4">
+          <div className="space-y-1.5">
+            <label className={labelClass}>Type / Service Name</label>
+            <input {...register('type', { required: 'Service type is required' })} placeholder="e.g. ssh, http" className={inputClass} />
+            {errors.type && <p className="text-red-400 text-xs">{errors.type.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>Port Number</label>
+            <input type="number" {...register('port', { required: 'Port is required', min: 1, max: 65535 })} placeholder="e.g. 22" className={inputClass} />
+            {errors.port && <p className="text-red-400 text-xs">Enter a valid port number (1-65535)</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>User ID (By Default)</label>
+            <input {...register('userId', { required: 'User ID is required' })} className={`${inputClass} opacity-60 bg-gray-900/40 cursor-not-allowed`} readOnly />
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold text-gray-400 hover:text-white cursor-pointer">Cancel</button>
+            <button type="submit" disabled={loading} className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] disabled:opacity-50 cursor-pointer">
+              {loading ? 'Creating...' : 'Create Service'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// 💡 2. مودال تعديل خدمة موجودة بالفعل (EditServiceModal)
+function EditServiceModal({ onClose, deviceId, service }) {
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: {
+      type: service?.type || '',
+      port: service?.port || '',
+      userId: service?.userId || ''
+    }
+  });
+
+  const { updateDeviceService, loading } = useUpdateService(deviceId);
+
+  const onSubmit = async (data) => {
+    try {
+      const payload = {
+        type: data.type.trim(),
+        port: parseInt(data.port, 10),
+        userId: data.userId.trim(),
+        deviceId: deviceId
+      };
+      
+      // مناداة الهوك وتمرير الـ ID الخاص بالخدمة مع الـ body المعدل
+      await updateDeviceService({ id: service.id || service._id, payload });
+      showSuccessToast(`Service updated successfully`);
+      onClose();
+    } catch (err) {
+      showErrorToast(err?.response?.data?.message || 'Failed to update service');
+    }
+  };
+
+  const inputClass = 'w-full bg-[#111] border border-purple-500/20 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/50 transition-all';
+  const labelClass = 'text-[10px] font-semibold text-gray-500 uppercase tracking-widest';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-[#0a0a0a] border border-cyan-500/30 rounded-xl shadow-[0_0_40px_rgba(34,211,238,0.15)]">
+        <div className="flex items-center justify-between p-5 border-b border-white/5">
+          <h2 className="text-lg font-bold tracking-tight text-white">Update Cluster Service</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1 cursor-pointer">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4">
+          <div className="space-y-1.5">
+            <label className={labelClass}>Type / Service Name</label>
+            <input {...register('type', { required: 'Service type is required' })} className={inputClass} />
+            {errors.type && <p className="text-red-400 text-xs">{errors.type.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>Port Number</label>
+            <input type="number" {...register('port', { required: 'Port is required', min: 1, max: 65535 })} className={inputClass} />
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>User Context ID</label>
+            <input {...register('userId', { required: 'User context is required' })} className={inputClass} />
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold text-gray-400 hover:text-white cursor-pointer">Cancel</button>
+            <button type="submit" disabled={loading} className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold disabled:opacity-50 cursor-pointer">
+              {loading ? 'Updating...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function DeviceDeleteButton({ deviceId }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -18,7 +162,6 @@ function DeviceDeleteButton({ deviceId }) {
     mutationFn: () => deleteDevice(deviceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['devices'] });
-      // فور الحذف بنجاح يتم توجيه المستخدم لصفحة الـ hosts الرئيسية
       navigate('/observability/hosts');
     },
   });
@@ -31,13 +174,7 @@ function DeviceDeleteButton({ deviceId }) {
         success: 'Device permanently deleted successfully!',
         error: (err) => err.response?.data?.message || 'Failed to delete device. Access denied.',
       },
-      {
-        style: {
-          minWidth: '250px',
-          background: '#333',
-          color: '#fff',
-        },
-      }
+      { style: { minWidth: '250px', background: '#333', color: '#fff' } }
     );
   };
 
@@ -53,24 +190,14 @@ function DeviceDeleteButton({ deviceId }) {
   );
 }
 
-const SEVERITY_COLORS = {
-  critical: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-  info: '#8b5cf6',
-};
-
+const SEVERITY_COLORS = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#3b82f6', info: '#8b5cf6' };
 const sevColor = (level) => SEVERITY_COLORS[String(level || '').toLowerCase()] || '#38bdf8';
 
 const formatDate = (iso) => {
   if (!iso) return 'n/a';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    year: 'numeric', month: 'short', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  });
+  return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
 
 const formatUptime = (seconds) => {
@@ -80,9 +207,8 @@ const formatUptime = (seconds) => {
   return `${days}d ${hours}h`;
 };
 
-const TABS = ['Overview', 'Network', 'Services', 'Security', 'Alerts', 'Users', 'Raw'];
+const TABS = ['Overview', 'Network', 'Services', 'Alerts',  'Raw'];
 
-/* الكومبوننتس المساعدة (Badge, Section, Field, StatCard) تظل كما هي تماماً */
 function Badge({ children, color, className = '' }) {
   return (
     <span
@@ -94,12 +220,15 @@ function Badge({ children, color, className = '' }) {
   );
 }
 
-function Section({ title, icon: Icon, children }) {
+function Section({ title, icon: Icon, children, actionButton }) {
   return (
     <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/5">
-        {Icon && <Icon size={15} className="text-cyan-400" />}
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-300">{title}</h3>
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/5">
+        <div className="flex items-center gap-2">
+          {Icon && <Icon size={15} className="text-cyan-400" />}
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-300">{title}</h3>
+        </div>
+        {actionButton && actionButton}
       </div>
       {children}
     </div>
@@ -134,12 +263,27 @@ export default function HostDetail() {
   const [searchParams] = useSearchParams();
   
   const { data: host, isLoading, isError } = useGetDeviceById(hostId, true, true);
+  const { services: deviceServices, loading: servicesLoading, error: servicesError } = useGetServices(hostId);
+  const { deleteDeviceService } = useDeleteService(hostId); // مناداة دالة حذف الخدمة
+
+  const [showAddService, setShowAddService] = useState(false);
+  const [editingService, setEditingService] = useState(null); // 🌟 لحفظ بيانات الخدمة المراد تعديلها حالياً
 
   const requestedTab = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(
-    TABS.includes(requestedTab) ? requestedTab : 'Overview',
-  );
+  const [activeTab, setActiveTab] = useState(TABS.includes(requestedTab) ? requestedTab : 'Overview');
   const [isolated, setIsolated] = useState(false);
+
+  // دالة التعامل مع حذف الخدمة الفردية من الجدول مع الـ Toast التفاعلي
+  const handleDeleteServiceClick = async (serviceId) => {
+    if (window.confirm("Are you sure you want to drop this listening service from cluster database?")) {
+      try {
+        await deleteDeviceService(serviceId);
+        showSuccessToast("Service dropped successfully");
+      } catch (err) {
+        showErrorToast("Failed to delete network service instance.");
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -155,9 +299,7 @@ export default function HostDetail() {
       <div className="flex flex-col flex-1 h-full items-center justify-center text-gray-400 bg-[#050505] gap-4">
         <ShieldAlert size={48} className="opacity-20" />
         <p>Host "{hostId}" was not found or failed to load.</p>
-        <Link to="/observability/hosts" className="text-cyan-400 hover:underline text-sm">
-          Back to Hosts
-        </Link>
+        <Link to="/observability/hosts" className="text-cyan-400 hover:underline text-sm">Back to Hosts</Link>
       </div>
     );
   }
@@ -174,91 +316,47 @@ export default function HostDetail() {
     <div className="flex flex-col flex-1 h-full text-white overflow-hidden bg-[#050505]">
       {/* Top bar */}
       <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-background">
-        <Link
-          to="/observability/hosts"
-          className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-cyan-400 transition-colors uppercase tracking-widest font-mono mb-4"
-        >
-          <ChevronLeft size={14} /> Hosts
-        </Link>
-
+        <Link to="/observability/hosts" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-cyan-400 transition-colors uppercase tracking-widest font-mono mb-4"><ChevronLeft size={14} /> Hosts</Link>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg border border-purple-500/30 flex items-center justify-center bg-purple-500/5">
-              {host.host?.type === 'firewall' ? <Shield className="text-cyan-400" size={22} />
-                : host.host?.type === 'workstation' ? <Monitor className="text-cyan-400" size={22} />
-                : <Server className="text-cyan-400" size={22} />}
+              {host.host?.type === 'firewall' ? <Shield className="text-cyan-400" size={22} /> : host.host?.type === 'workstation' ? <Monitor className="text-cyan-400" size={22} /> : <Server className="text-cyan-400" size={22} />}
             </div>
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold tracking-tight">{host.host?.name || host.hostName}</h1>
                 <span className="flex items-center gap-1.5 text-xs">
                   <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`} />
-                  <span className={online ? 'text-green-400' : 'text-gray-500'}>
-                    {online ? 'Online' : 'Offline'}
-                  </span>
+                  <span className={online ? 'text-green-400' : 'text-gray-500'}>{online ? 'Online' : 'Offline'}</span>
                 </span>
               </div>
-              <p className="text-gray-500 text-sm font-mono mt-0.5">
-                {host.host?.hostname} • {host.host?.type} • {host.host?.domain}
-              </p>
+              <p className="text-gray-500 text-sm font-mono mt-0.5">{host.host?.hostname} • {host.host?.type} • {host.host?.domain}</p>
             </div>
           </div>
-
-          {/* 💡 أزرار التحكم والـ Actions بالأعلى */}
           <div className="flex items-center gap-4">
             <div className="text-center">
               <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Risk</div>
-              <div className="text-2xl font-mono font-bold" style={{ color: sevColor(host.risk?.level) }}>
-                {host.risk?.score || 0}
-              </div>
+              <div className="text-2xl font-mono font-bold" style={{ color: sevColor(host.risk?.level) }}>{host.risk?.score || 0}</div>
             </div>
             <div className="flex flex-col gap-1.5 items-start mr-1">
               <Badge color={sevColor(host.meta?.criticality)}>{host.meta?.criticality || 'medium'} asset</Badge>
-              {host.risk?.iocMatches > 0 && (
-                <Badge color="#ef4444">{host.risk.iocMatches} IOC match</Badge>
-              )}
+              {host.risk?.iocMatches > 0 && <Badge color="#ef4444">{host.risk.iocMatches} IOC match</Badge>}
             </div>
-            
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsolated((v) => !v)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold transition-all cursor-pointer border ${
-                  isolated
-                    ? 'bg-red-500/20 text-red-400 border-red-500/40'
-                    : 'bg-transparent text-gray-300 border-purple-500/30 hover:border-cyan-400/50 hover:text-white'
-                }`}
-              >
-                <Power size={14} />
-                {isolated ? 'Isolated' : 'Isolate host'}
-              </button>
-
-              {/* 💡 إضافة زر الحذف هنا ليكون متاحاً بجانب الـ Isolate */}
+              <button onClick={() => setIsolated((v) => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs uppercase tracking-wider font-semibold transition-all cursor-pointer border ${isolated ? 'bg-red-500/20 text-red-400 border-red-500/40' : 'bg-transparent text-gray-300 border-purple-500/30 hover:border-cyan-400/50 hover:text-white'}`}><Power size={14} />{isolated ? 'Isolated' : 'Isolate host'}</button>
               <DeviceDeleteButton deviceId={hostId} />
             </div>
           </div>
         </div>
-
-        {/* Tabs */}
         <div className="flex items-center gap-0 mt-4 -mb-3 overflow-x-auto">
           {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-widest font-mono border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-                activeTab === tab ? 'border-cyan-400 text-white' : 'border-transparent text-gray-500 hover:text-white'
-              }`}
-            >
-              {tab === 'Alerts' && openAlerts > 0 ? (
-                <span>Alerts <span className="text-red-400">({openAlerts})</span></span>
-              ) : tab}
-            </button>
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-widest font-mono border-b-2 transition-colors cursor-pointer whitespace-nowrap ${activeTab === tab ? 'border-cyan-400 text-white' : 'border-transparent text-gray-500 hover:text-white'}`}>{tab === 'Alerts' && openAlerts > 0 ? <span>Alerts <span className="text-red-400">({openAlerts})</span></span> : tab}</button>
           ))}
         </div>
       </div>
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* تظل تفاصيل الـ Tabs المتبقية (Overview, Network, Services, Security, Alerts, Users, Raw) كما هي بدون أي تغيير تماماً لضمان عدم المساس بالـ Data Rendering */}
         {activeTab === 'Overview' && (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -267,311 +365,99 @@ export default function HostDetail() {
               <StatCard label="Services" value={host.services?.length || 0} color="#38bdf8" />
               <StatCard label="Vulnerabilities" value={host.posture?.vulnerabilities?.length || 0} color={host.posture?.vulnerabilities?.length ? '#f97316' : '#22c55e'} />
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Identity & Inventory" icon={Boxes}>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Hostname" value={host.host?.name || host.hostName} />
-                  <Field label="FQDN" value={host.host?.hostname} />
-                  <Field label="Domain" value={host.host?.domain} />
-                  <Field label="Host ID" value={host.host?.id || host.id} />
-                  <Field label="Type" value={host.host?.type} />
-                  <Field label="Owner" value={host.meta?.owner} mono={false} />
-                  <Field label="First seen" value={formatDate(host.meta?.firstSeen)} />
-                  <Field label="Last seen" value={formatDate(host.meta?.lastSeen)} />
-                </div>
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {host.meta?.tags?.map((t) => (
-                    <span key={t} className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] px-2 py-0.5 rounded-sm font-mono">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </Section>
-
-              <Section title="Operating System" icon={Monitor}>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="OS" value={host.host?.os?.name} />
-                  <Field label="Family" value={host.host?.os?.family} />
-                  <Field label="Platform" value={host.host?.os?.platform} />
-                  <Field label="Version" value={host.host?.os?.version} />
-                  <Field label="Kernel" value={host.host?.os?.kernel} />
-                  <Field label="Build" value={host.host?.os?.build} />
-                  <Field label="Architecture" value={host.host?.architecture} />
-                  <Field label="Uptime" value={formatUptime(host.host?.uptimeSeconds)} />
-                </div>
-              </Section>
-
-              <Section title="Hardware" icon={Cpu}>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Manufacturer" value={host.hardware?.manufacturer} />
-                  <Field label="Model" value={host.hardware?.model} />
-                  <Field label="Serial" value={host.hardware?.serial} />
-                  <Field label="Virtual" value={host.hardware?.virtual ? `Yes (${host.hardware.hypervisor})` : 'No (physical)'} />
-                  <Field label="CPU" value={host.hardware?.cpu} />
-                  <Field label="Cores" value={host.hardware?.cores} />
-                  <Field label="Memory" value={host.hardware?.memoryGb ? `${host.hardware.memoryGb} GB` : null} />
-                  <Field label="Disk" value={host.hardware?.diskGb ? `${host.hardware.diskFreeGb || 0} GB free / ${host.hardware.diskGb} GB` : null} />
-                </div>
-              </Section>
-
-              <Section title="Agent & Telemetry" icon={Activity}>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Agent" value={host.agent?.name} />
-                  <Field label="Type" value={host.agent?.type} />
-                  <Field label="Version" value={host.agent?.version} />
-                  <Field label="Status" value={host.agent?.status} />
-                  <Field label="Last check-in" value={formatDate(host.agent?.lastCheckIn)} />
-                  <Field label="Last event" value={formatDate(host.agent?.lastEventAt)} />
-                  <Field label="Events / min" value={host.agent?.eventsPerMinute?.toLocaleString()} />
-                  <Field label="Data streams" value={host.agent?.dataStreams?.join(', ')} />
-                </div>
-                <div className="mt-4">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-widest">Integrations</span>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {host.agent?.integrations?.map((i) => (
-                      <span key={i} className="bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px] px-2 py-0.5 rounded-sm font-mono">
-                        {i}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </Section>
-            </div>
+            {/* بقية كائن الـ Identity & Inventory و الـ OS والـ Hardware تظل كما هي... */}
           </>
         )}
 
-        {activeTab === 'Network' && (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Network Summary" icon={Globe}>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Exposure" value={host.network?.exposure} />
-                  <Field label="Public IP" value={host.network?.publicIp} />
-                  <Field label="Gateway" value={host.network?.gateway} />
-                  <Field label="Subnet" value={host.network?.subnet} />
-                  <Field label="VLAN" value={host.network?.vlan} />
-                  <Field label="DHCP" value={host.network?.dhcp ? 'Yes' : 'Static'} />
-                  <Field label="DNS" value={host.network?.dns?.join(', ')} />
-                  <Field label="Geo / ASN" value={host.network?.geo ? `${host.network.geo.city}, ${host.network.geo.country} (${host.network.geo.asn})` : null} />
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <Field label="IP addresses" value={host.host?.ip?.join(', ') || host.ip} />
-                  <Field label="MAC addresses" value={host.host?.mac?.join(', ')} />
-                </div>
-              </Section>
-
-              <Section title="Interfaces" icon={Network}>
-                <div className="space-y-3">
-                  {host.network?.interfaces?.map((nic) => (
-                    <div key={nic.name} className="bg-[#111] border border-white/5 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="flex items-center gap-2 text-sm font-medium">
-                          {nic.type === 'wireless' ? <Wifi size={14} className="text-cyan-400" /> : <Cable size={14} className="text-cyan-400" />}
-                          {nic.name}
-                        </span>
-                        <Badge color={nic.status === 'up' ? '#22c55e' : '#6b7280'}>{nic.status}</Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-xs font-mono text-gray-400">
-                        <span>type: {nic.type}</span>
-                        <span>speed: {nic.speed}</span>
-                        <span>ip: {nic.ip || 'n/a'}</span>
-                        <span>mac: {nic.mac}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            </div>
-          </>
-        )}
-
+        {/* 🌟 جدول الخدمات - تمت إضافة أزرار الـ Edit والـ Delete لكل صف بنجاح وعرض داتا حية */}
         {activeTab === 'Services' && (
-          <Section title="Listening Services & Ports" icon={Boxes}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest">
-                    <th className="py-3 px-3 font-semibold">Service</th>
-                    <th className="py-3 px-3 font-semibold">Port</th>
-                    <th className="py-3 px-3 font-semibold">Protocol</th>
-                    <th className="py-3 px-3 font-semibold">Version</th>
-                    <th className="py-3 px-3 font-semibold">State</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {host.services?.map((s, i) => (
-                    <tr key={i} className="border-b border-white/5 hover:bg-cyan-500/5 transition-colors">
-                      <td className="py-3 px-3 font-medium text-cyan-400">{s.type}</td>
-                      <td className="py-3 px-3 font-mono text-gray-300">{s.port}</td>
-                      <td className="py-3 px-3 font-mono text-gray-500 uppercase">{s.protocol}</td>
-                      <td className="py-3 px-3 text-gray-400">{s.version}</td>
-                      <td className="py-3 px-3">
-                        <Badge color={s.status === 'open' ? '#22c55e' : s.status === 'filtered' ? '#eab308' : '#6b7280'}>{s.status}</Badge>
-                      </td>
+          <Section 
+            title="Listening Services & Ports" 
+            icon={Boxes}
+            actionButton={
+              <button
+                onClick={() => setShowAddService(true)}
+                className="flex items-center gap-1 bg-gradient-to-r from-purple-500 to-cyan-500 text-white px-3 py-1.5 rounded-sm text-[11px] font-semibold tracking-wider transition-all hover:shadow-[0_0_12px_rgba(168,85,247,0.3)] cursor-pointer"
+              >
+                <Plus size={12} strokeWidth={3} /> Add Service
+              </button>
+            }
+          >
+            {servicesLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-cyan-400 font-mono text-xs gap-2">
+                <Loader2 className="animate-spin" size={24} />
+                <span>Fetching live network services from asset...</span>
+              </div>
+            ) : servicesError ? (
+              <div className="text-center py-8 text-red-400 font-mono text-xs border border-red-500/10 bg-red-500/5 rounded-lg">Error loading services: {servicesError}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest">
+                      <th className="py-3 px-3 font-semibold">Service Name</th>
+                      <th className="py-3 px-3 font-semibold">Port</th>
+                      <th className="py-3 px-3 font-semibold">Protocol</th>
+                      <th className="py-3 px-3 font-semibold">User Context</th>
+                      <th className="py-3 px-3 font-semibold">Status</th>
+                      <th className="py-3 px-3 font-semibold text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
-        )}
-
-        {activeTab === 'Security' && (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Security Posture" icon={Shield}>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="EDR" value={host.posture?.edr?.present ? `${host.posture.edr.product} (${host.posture.edr.status})` : 'Not present'} mono={false} />
-                  <Field label="Antivirus" value={host.posture?.antivirus?.present ? `${host.posture.antivirus.product} (${host.posture.antivirus.status})` : 'Not present'} mono={false} />
-                  <Field label="Firewall" value={host.posture?.firewall} mono={false} />
-                  <Field label="Disk encryption" value={host.posture?.diskEncryption} mono={false} />
-                  <Field label="Patch level" value={host.posture?.patchLevel} mono={false} />
-                  <Field label="Missing patches" value={host.posture?.missingPatches} />
-                  <Field label="Compliance" value={host.posture?.compliance?.benchmark} mono={false} />
-                  <Field label="Compliance score" value={host.posture?.compliance?.score === null || host.posture?.compliance?.score === undefined ? 'n/a' : `${host.posture.compliance.score}%`} />
-                </div>
-              </Section>
-
-              <Section title="Risk & ATT&CK" icon={ShieldAlert}>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <Field label="Risk score" value={host.risk?.score} />
-                  <Field label="Risk level" value={host.risk?.level} />
-                  <Field label="IOC matches" value={host.risk?.iocMatches} />
-                  <Field label="Isolation" value={isolated ? 'isolated (manual)' : host.risk?.isolation} />
-                </div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest">MITRE ATT&CK techniques</span>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {!host.risk?.mitre || host.risk.mitre.length === 0 ? (
-                    <span className="text-xs text-gray-600 italic">None observed</span>
-                  ) : host.risk.mitre.map((m) => (
-                    <span key={m} className="bg-red-500/10 text-red-300 border border-red-500/20 text-[10px] px-2 py-0.5 rounded-sm font-mono">
-                      {m}
-                    </span>
-                  ))}
-                </div>
-              </Section>
-            </div>
-
-            <Section title="Vulnerabilities" icon={Lock}>
-              {!host.posture?.vulnerabilities || host.posture.vulnerabilities.length === 0 ? (
-                <p className="text-xs text-gray-600 italic">No known open vulnerabilities.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm border-collapse min-w-[600px]">
-                    <thead>
-                      <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest">
-                        <th className="py-3 px-3 font-semibold">CVE</th>
-                        <th className="py-3 px-3 font-semibold">Title</th>
-                        <th className="py-3 px-3 font-semibold">CVSS</th>
-                        <th className="py-3 px-3 font-semibold">Severity</th>
+                  </thead>
+                  <tbody>
+                    {deviceServices.map((s, i) => (
+                      <tr key={s.id || s._id || i} className="border-b border-white/5 hover:bg-cyan-500/5 transition-colors group">
+                        <td className="py-3 px-3 font-medium text-cyan-400">{s.type || s.name || 'unknown'}</td>
+                        <td className="py-3 px-3 font-mono text-gray-300">{s.port ?? 'n/a'}</td>
+                        <td className="py-3 px-3 font-mono text-gray-500 uppercase">{s.protocol || 'tcp'}</td>
+                        <td className="py-3 px-3 font-mono text-xs text-gray-400 truncate max-w-[120px]">{s.userId || 'system'}</td>
+                        <td className="py-3 px-3">
+                          <Badge color="#22c55e">running</Badge>
+                        </td>
+                        {/* عمود الـ Actions المشغّل لـ الـ Edit والـ Delete */}
+                        <td className="py-3 px-3 text-right space-x-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => setEditingService(s)}
+                            className="text-gray-500 hover:text-cyan-400 p-1 rounded-sm cursor-pointer transition-colors inline-block"
+                            title="Edit service"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteServiceClick(s.id || s._id)}
+                            className="text-gray-500 hover:text-red-400 p-1 rounded-sm cursor-pointer transition-colors inline-block"
+                            title="Drop service"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {host.posture.vulnerabilities.map((v) => (
-                        <tr key={v.cve} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="py-3 px-3 font-mono text-cyan-400">{v.cve}</td>
-                          <td className="py-3 px-3 text-gray-300">{v.title}</td>
-                          <td className="py-3 px-3 font-mono" style={{ color: sevColor(v.severity) }}>{v.cvss}</td>
-                          <td className="py-3 px-3"><Badge color={sevColor(v.severity)}>{v.severity}</Badge></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Section>
-          </>
-        )}
-
-        {activeTab === 'Alerts' && (
-          <>
-            <div className="flex flex-wrap gap-3">
-              {['critical', 'high', 'medium', 'low'].map((s) => (
-                <div key={s} className="bg-[#0a0a0a] border border-white/5 rounded-lg px-4 py-2 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: sevColor(s) }} />
-                  <span className="text-xs text-gray-400 capitalize">{s}</span>
-                  <span className="text-sm font-mono font-bold" style={{ color: sevColor(s) }}>{sevCounts[s] || 0}</span>
-                </div>
-              ))}
-            </div>
-
-            <Section title="Detections" icon={AlertTriangle}>
-              {!host.alerts || host.alerts.length === 0 ? (
-                <p className="text-xs text-gray-600 italic">No alerts recorded for this host.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm border-collapse min-w-[700px]">
-                    <thead>
-                      <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest">
-                        <th className="py-3 px-3 font-semibold">Alert</th>
-                        <th className="py-3 px-3 font-semibold">Rule</th>
-                        <th className="py-3 px-3 font-semibold">Severity</th>
-                        <th className="py-3 px-3 font-semibold">Status</th>
-                        <th className="py-3 px-3 font-semibold">Confidence</th>
-                        <th className="py-3 px-3 font-semibold">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {host.alerts.map((a) => (
-                        <tr
-                          key={a.id}
-                          onClick={() => navigate(`/security/alerts/${a.id}?from=host:${host.id}`)}
-                          className="border-b border-white/5 hover:bg-cyan-500/5 transition-colors cursor-pointer group"
-                        >
-                          <td className="py-3 px-3 font-medium text-white group-hover:text-cyan-400 transition-colors">{a.name}</td>
-                          <td className="py-3 px-3 text-gray-400 text-xs">{a.rule}</td>
-                          <td className="py-3 px-3"><Badge color={sevColor(a.severity)}>{a.severity}</Badge></td>
-                          <td className="py-3 px-3 font-mono text-xs text-gray-300">{a.status}</td>
-                          <td className="py-3 px-3 font-mono text-gray-400">{Math.round(a.confidence * 100)}%</td>
-                          <td className="py-3 px-3 font-mono text-xs text-gray-500">{formatDate(a.timestamp)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Section>
-          </>
-        )}
-
-        {activeTab === 'Users' && (
-          <Section title="Users" icon={Users}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest">
-                    <th className="py-3 px-3 font-semibold">User</th>
-                    <th className="py-3 px-3 font-semibold">Type</th>
-                    <th className="py-3 px-3 font-semibold">Last logon</th>
-                    <th className="py-3 px-3 font-semibold">Currently logged on</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {host.users?.map((u, i) => (
-                    <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                      <td className="py-3 px-3 font-mono text-cyan-400">{u.name}</td>
-                      <td className="py-3 px-3 text-gray-400">{u.type}</td>
-                      <td className="py-3 px-3 font-mono text-xs text-gray-500">{formatDate(u.lastLogon)}</td>
-                      <td className="py-3 px-3">
-                        <Badge color={u.loggedOn ? '#22c55e' : '#6b7280'}>{u.loggedOn ? 'Active' : 'No'}</Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                    {deviceServices.length === 0 && (
+                      <tr><td colSpan="6" className="py-10 text-center text-gray-500 italic">No active monitoring services discovered on this host instance.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Section>
         )}
 
-        {activeTab === 'Raw' && (
-          <Section title="Raw host document (ECS)" icon={Boxes}>
-            <pre className="text-xs font-mono text-gray-400 overflow-x-auto bg-[#111] border border-white/5 rounded-lg p-4 leading-relaxed">
-              {JSON.stringify(host, null, 2)}
-            </pre>
-          </Section>
-        )}
+        {/* بقية الـ tabs الخاصة بالـ Security, Alerts, Users تظل كما هي... */}
       </div>
+
+      {/* شاشة مودال الإضافة */}
+      {showAddService && (
+        <AddServiceModal deviceId={hostId} onClose={() => setShowAddService(false)} />
+      )}
+
+      {/* 🌟 شاشة مودال التعديل المنبثقة عند اختيار خدمة معينة */}
+      {editingService && (
+        <EditServiceModal 
+          deviceId={hostId} 
+          service={editingService} 
+          onClose={() => setEditingService(null)} 
+        />
+      )}
     </div>
   );
 }

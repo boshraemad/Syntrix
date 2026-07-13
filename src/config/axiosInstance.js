@@ -12,7 +12,7 @@ if (!URL) {
 const config = {
   maxBodyLength: 10 * 1024 * 1024, // Set to 10MB, adjust as needed
   baseURL: URL,
-  withCredentials: true,
+  withCredentials: true, // السطر موجود وزي الفل هنا 🌟
   headers: {
     "Accept": "application/json",
     "Content-Type": "application/json",
@@ -71,6 +71,7 @@ axiosInstance.interceptors.response.use(
       console.error("Network error:", error.message);
     }
 
+    // التعديل هنا: بنمرر الـ error كامل عشان الـ react-query والـ Hooks تلقط الـ response والرسائل بتاعته
     return Promise.reject(error);
   },
 );
